@@ -1,0 +1,4 @@
+{
+  "faster_whisper_folder": "/opt/FasterWhisper",
+  "faster_whisper_model": "medium"
+}

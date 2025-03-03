@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8"/>
+    <link rel="stylesheet" href="styles.css"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Tauri App</title>
+    <script type="module" src="/main.js" defer></script>
+</head>
+
+<body>
+<main class="container">
+    <label for="select-action">Choose the action</label>
+    <form class="row" id="action-form">
+        <select id="select-action">
+        </select>
+    </form>
+
+    <br/>
+
+    <label for="selected-action-description">Action description</label>
+    <input width="100px" type="text" id="selected-action-description" readonly/>
+
+    <form class="row" id="description-form">
+    </form>
+    <br/>
+
+    <br/>
+
+    <form class="row" id="playground">
+        <textarea id="text-area_playground" rows="20" cols="80" placeholder="Playground text area..."></textarea>
+    </form>
+</main>
+</body>
+</html>
