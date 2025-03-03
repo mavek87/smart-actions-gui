@@ -12,7 +12,7 @@ use std::{
 };
 
 use serde::Deserialize;
-use tauri::menu::Menu;
+use tauri::menu::{CheckMenuItemBuilder, Menu};
 // use tauri::GlobalShortcutManager;
 //
 // // Registriamo la scorciatoia CTRL + U
@@ -37,7 +37,12 @@ struct Config {
 
 // Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
 #[tauri::command]
-fn notify_change_action(value: &str, name: &str, state: State<AppState>, _app: AppHandle) -> String {
+fn notify_change_action(
+    value: &str,
+    name: &str,
+    state: State<AppState>,
+    _app: AppHandle,
+) -> String {
     println!("value: {}", value);
     println!("name: {}", name);
 
@@ -61,13 +66,6 @@ fn notify_change_action(value: &str, name: &str, state: State<AppState>, _app: A
 
     current_action_value.to_string()
 }
-
-// fn change_tray_text(app: tauri::AppHandle, new_text: String) {
-//     let tray_handle = app.tray_handle();
-//     let item_handle = tray_handle.get_item("toggle_status");
-//
-//     let _ = item_handle.set_title(new_text);
-// }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -114,10 +112,27 @@ pub fn run() {
                 Some("Ctrl+E"),
             )?));
 
-            let quit_item = MenuItemBuilder::new("Quit")
-                .id("quit")
-                .accelerator("CmdOrCtrl+Q")
+            // TODO: use the current language if present
+            //let lang_str = "unset";
+
+            // https://v2.tauri.app/learn/window-menu/
+            let lang_sub_item_unset = CheckMenuItemBuilder::with_id("unset", "Unset")
+                .checked(true)
                 .build(app)?;
+
+            let lang_sub_item_en = CheckMenuItemBuilder::with_id("en", "English")
+                .checked(false)
+                .build(app)?;
+
+            let lang_sub_item_it = CheckMenuItemBuilder::with_id("it", "Italian")
+                .checked(false)
+                .build(app)?;
+
+            let language_submenu = SubmenuBuilder::new(app, "Language")
+                .item(&lang_sub_item_unset)
+                .item(&lang_sub_item_en)
+                .item(&lang_sub_item_it)
+                .build()?;
 
             let about_metadata = AboutMetadataBuilder::new()
                 .name(Some("smart-actions-gui"))
@@ -131,6 +146,11 @@ pub fn run() {
                 .about(Some(about_metadata))
                 .build()?;
 
+            let quit_item = MenuItemBuilder::new("Quit")
+                .id("quit")
+                .accelerator("CmdOrCtrl+Q")
+                .build(app)?;
+
             let menu = MenuBuilder::new(app)
                 .item(&action_state_item)
                 .separator()
@@ -138,6 +158,8 @@ pub fn run() {
                     &*start_menu_item.lock().unwrap(),
                     &*stop_menu_item.lock().unwrap(),
                 ])
+                .separator()
+                .item(&language_submenu)
                 .separator()
                 .item(&help_submenu)
                 .separator()
@@ -150,6 +172,22 @@ pub fn run() {
             };
 
             app.manage(app_state);
+            app.on_menu_event(move |_app, event| match event.id().0.as_str() {
+                "unset" | "en" | "it" => {
+                    lang_sub_item_unset
+                        .set_checked(event.id().0.as_str() == "unset")
+                        .expect("Change check error");
+                    lang_sub_item_en
+                        .set_checked(event.id().0.as_str() == "en")
+                        .expect("Change check error");
+                    lang_sub_item_it
+                        .set_checked(event.id().0.as_str() == "it")
+                        .expect("Change check error");
+                }
+                _ => {
+                    println!("unexpected menu event");
+                }
+            });
 
             let start_menu_item_clone = Arc::clone(&start_menu_item);
             let stop_menu_item_clone = Arc::clone(&stop_menu_item);
@@ -157,6 +195,7 @@ pub fn run() {
             TrayIconBuilder::new()
                 .icon(app.default_window_icon().unwrap().clone())
                 .menu(&menu)
+                //TODO: unify the two on_menu_event
                 .on_menu_event(move |app, event| match event.id.as_ref() {
                     "start" => {
                         println!("start record was clicked");
