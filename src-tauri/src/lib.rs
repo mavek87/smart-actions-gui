@@ -1,14 +1,14 @@
 use tauri::{
-    menu::{Menu, MenuItem},
+    menu::{AboutMetadataBuilder, MenuBuilder, MenuItem, MenuItemBuilder, SubmenuBuilder},
     tray::TrayIconBuilder,
-    Manager, State, Wry,
+    AppHandle, Manager, State, Wry,
 };
 
 use std::{
+    fs::File,
+    io::Read,
     process::{Child, Command},
     sync::{Arc, Mutex},
-    fs::File,
-    io::Read
 };
 
 use serde::Deserialize;
@@ -24,15 +24,51 @@ struct Config {
 
 // Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
 #[tauri::command]
-fn notify_change_action(name: &str, state: State<AppState>) -> String {
+fn notify_change_action(name: &str, state: State<AppState>, app: AppHandle) -> String {
     let mut current_action_name = state.current_action_name.lock().unwrap();
 
     *current_action_name = name.to_string();
+
+    // let icon = app.tray_by_id("action_state_item").unwrap();
+    // icon.set_menu();
+    //
+    // // Ottenere la finestra principale
+    // if let Some(main_window) = app.get_window("main") {
+    //     let menu_handle = main_window.menu_handle();
+    //
+    //     // Cambiare il testo del MenuItem con ID "action_state_item"
+    //     if let Ok(menu_item) = menu_handle.get_item("action_state_item") {
+    //         let _ = menu_item.set_title(name.to_string());
+    //     }
+    // }
+
+    // let Some(root) = app.menu() else {
+    //     return Ok(());
+    // };
+    //
+    // // This removes a menu item from the macOS "app menu" (the leftmost one)
+    // if let Some(app_menu) = find(&root, "MyAppName") {
+    //     if let Some(submenu) = app_menu.get("the_submenu_id") {
+    //         app_menu.remove(&submenu)?;
+    //     }
+    // }
+
+    // let menu = app.menu().unwrap();
+    // let kind = menu.get("action_state_item").unwrap();
+    // let x = kind.as_menuitem().unwrap();
+    // x.set_text(current_action_name.to_string());
 
     println!("current action name: {}", current_action_name);
 
     current_action_name.to_string()
 }
+
+// fn change_tray_text(app: tauri::AppHandle, new_text: String) {
+//     let tray_handle = app.tray_handle();
+//     let item_handle = tray_handle.get_item("toggle_status");
+//
+//     let _ = item_handle.set_title(new_text);
+// }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -58,34 +94,56 @@ pub fn run() {
             let process_start = Arc::new(Mutex::new(None::<Child>));
             let process_stop = Arc::new(Mutex::new(None::<Child>));
 
-            let action_state_item = MenuItem::with_id(app, "action_state_item", "AAA", true, None::<&str>)?;
-            action_state_item.set_enabled(false);
+            let action_state_item = MenuItemBuilder::new("AAA")
+                .id("action_state_item")
+                .enabled(false)
+                .build(app)?;
 
             let start_record_menu_item = Arc::new(Mutex::new(MenuItem::with_id(
                 app,
                 "start_record",
                 "Start record",
                 true,
-                None::<&str>,
+                Some("Ctrl+N"),
             )?));
+
             let stop_record_menu_item = Arc::new(Mutex::new(MenuItem::with_id(
                 app,
                 "stop_record",
                 "Stop record",
                 false,
-                None::<&str>,
+                Some("Ctrl+E"),
             )?));
-            let quit_item = MenuItem::with_id(app, "quit", "Quit", true, None::<&str>)?;
 
-            let menu = Menu::with_items(
-                app,
-                &[
-                    &action_state_item,
+            let quit_item = MenuItemBuilder::new("Quit")
+                .id("quit")
+                .accelerator("CmdOrCtrl+Q")
+                .build(app)?;
+
+            let about_metadata = AboutMetadataBuilder::new()
+                .name(Some("smart-actions-gui"))
+                .version(Some("0.1.0"))
+                .website_label(Some("Github Repository"))
+                .website(Some("https://github.com/mavek87/smart-actions-gui"))
+                .authors(Some(vec![String::from("Matteo Veroni")]))
+                .build();
+
+            let help_submenu = SubmenuBuilder::new(app, "Help")
+                .about(Some(about_metadata))
+                .build()?;
+
+            let menu = MenuBuilder::new(app)
+                .item(&action_state_item)
+                .separator()
+                .items(&[
                     &*start_record_menu_item.lock().unwrap(),
                     &*stop_record_menu_item.lock().unwrap(),
-                    &quit_item,
-                ],
-            )?;
+                ])
+                .separator()
+                .item(&help_submenu)
+                .separator()
+                .item(&quit_item)
+                .build()?;
 
             let start_record_menu_item_clone = Arc::clone(&start_record_menu_item);
             let stop_record_menu_item_clone = Arc::clone(&stop_record_menu_item);
@@ -176,7 +234,7 @@ pub fn run() {
             Ok(())
         })
         .manage(AppState {
-            current_action_name: Mutex::new("dictate_text".to_string())
+            current_action_name: Mutex::new("dictate_text".to_string()),
         })
         .plugin(tauri_plugin_opener::init())
         .invoke_handler(tauri::generate_handler![notify_change_action])
