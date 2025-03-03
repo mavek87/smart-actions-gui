@@ -12,9 +12,22 @@ use std::{
 };
 
 use serde::Deserialize;
+use tauri::menu::Menu;
+// use tauri::GlobalShortcutManager;
+//
+// // Registriamo la scorciatoia CTRL + U
+// app_handle.global_shortcut_manager().register("CTRL + U", move || {
+// // Apre una finestra di dialogo con un messaggio
+// tauri::api::dialog::message(
+// Some(&app_handle),
+// "Scorciatoia premuta",
+// "Hai premuto CTRL + U!",
+// );
+// });
 
 struct AppState {
-    current_action_name: Mutex<String>,
+    menu_handle: Mutex<Menu<Wry>>,
+    current_action_value: Mutex<String>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -24,43 +37,29 @@ struct Config {
 
 // Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
 #[tauri::command]
-fn notify_change_action(name: &str, state: State<AppState>, app: AppHandle) -> String {
-    let mut current_action_name = state.current_action_name.lock().unwrap();
+fn notify_change_action(value: &str, name: &str, state: State<AppState>, _app: AppHandle) -> String {
+    println!("value: {}", value);
+    println!("name: {}", name);
 
-    *current_action_name = name.to_string();
+    let menu_handle = state.menu_handle.lock().unwrap();
+    menu_handle
+        .get("action_state_item")
+        .unwrap()
+        .as_menuitem()
+        .unwrap()
+        .set_text(format!("Action: {}", name))
+        .unwrap();
 
-    // let icon = app.tray_by_id("action_state_item").unwrap();
-    // icon.set_menu();
-    //
-    // // Ottenere la finestra principale
-    // if let Some(main_window) = app.get_window("main") {
-    //     let menu_handle = main_window.menu_handle();
-    //
-    //     // Cambiare il testo del MenuItem con ID "action_state_item"
-    //     if let Ok(menu_item) = menu_handle.get_item("action_state_item") {
-    //         let _ = menu_item.set_title(name.to_string());
-    //     }
-    // }
+    let mut current_action_value = state.current_action_value.lock().unwrap();
 
-    // let Some(root) = app.menu() else {
-    //     return Ok(());
-    // };
-    //
-    // // This removes a menu item from the macOS "app menu" (the leftmost one)
-    // if let Some(app_menu) = find(&root, "MyAppName") {
-    //     if let Some(submenu) = app_menu.get("the_submenu_id") {
-    //         app_menu.remove(&submenu)?;
-    //     }
-    // }
+    *current_action_value = value.to_string();
+    println!("current_action_value: {}", value);
 
     // let menu = app.menu().unwrap();
     // let kind = menu.get("action_state_item").unwrap();
-    // let x = kind.as_menuitem().unwrap();
-    // x.set_text(current_action_name.to_string());
+    // kind.as_menuitem().unwrap().set_text(format!("{}", name)).unwrap();
 
-    println!("current action name: {}", current_action_name);
-
-    current_action_name.to_string()
+    current_action_value.to_string()
 }
 
 // fn change_tray_text(app: tauri::AppHandle, new_text: String) {
@@ -94,23 +93,23 @@ pub fn run() {
             let process_start = Arc::new(Mutex::new(None::<Child>));
             let process_stop = Arc::new(Mutex::new(None::<Child>));
 
-            let action_state_item = MenuItemBuilder::new("AAA")
+            let action_state_item = MenuItemBuilder::new("Action: Dictate Text")
                 .id("action_state_item")
                 .enabled(false)
                 .build(app)?;
 
-            let start_record_menu_item = Arc::new(Mutex::new(MenuItem::with_id(
+            let start_menu_item = Arc::new(Mutex::new(MenuItem::with_id(
                 app,
-                "start_record",
-                "Start record",
+                "start",
+                "Start",
                 true,
                 Some("Ctrl+N"),
             )?));
 
-            let stop_record_menu_item = Arc::new(Mutex::new(MenuItem::with_id(
+            let stop_menu_item = Arc::new(Mutex::new(MenuItem::with_id(
                 app,
-                "stop_record",
-                "Stop record",
+                "stop",
+                "Stop",
                 false,
                 Some("Ctrl+E"),
             )?));
@@ -136,8 +135,8 @@ pub fn run() {
                 .item(&action_state_item)
                 .separator()
                 .items(&[
-                    &*start_record_menu_item.lock().unwrap(),
-                    &*stop_record_menu_item.lock().unwrap(),
+                    &*start_menu_item.lock().unwrap(),
+                    &*stop_menu_item.lock().unwrap(),
                 ])
                 .separator()
                 .item(&help_submenu)
@@ -145,29 +144,33 @@ pub fn run() {
                 .item(&quit_item)
                 .build()?;
 
-            let start_record_menu_item_clone = Arc::clone(&start_record_menu_item);
-            let stop_record_menu_item_clone = Arc::clone(&stop_record_menu_item);
-            let process_start_clone = Arc::clone(&process_start);
-            let process_stop_clone = Arc::clone(&process_stop);
+            let app_state = AppState {
+                current_action_value: Mutex::new("dictate_text".to_string()),
+                menu_handle: Mutex::new(menu.clone()),
+            };
 
-            // let tray = TrayIconBuilder::new()
+            app.manage(app_state);
+
+            let start_menu_item_clone = Arc::clone(&start_menu_item);
+            let stop_menu_item_clone = Arc::clone(&stop_menu_item);
+
             TrayIconBuilder::new()
                 .icon(app.default_window_icon().unwrap().clone())
                 .menu(&menu)
                 .on_menu_event(move |app, event| match event.id.as_ref() {
-                    "start_record" => {
+                    "start" => {
                         println!("start record was clicked");
 
                         switch_menu_items_states(
-                            &start_record_menu_item_clone,
-                            &stop_record_menu_item_clone,
+                            &start_menu_item_clone,
+                            &stop_menu_item_clone,
                             true,
                         );
 
                         let mut process_start = process_start.lock().unwrap();
 
                         let app_state: State<AppState> = app.state();
-                        let current_action_name = app_state.current_action_name.lock().unwrap();
+                        let current_action_name = app_state.current_action_value.lock().unwrap();
 
                         if process_start.is_none() {
                             let child = Command::new("bash")
@@ -183,12 +186,12 @@ pub fn run() {
                             println!("Recording is already running.");
                         }
                     }
-                    "stop_record" => {
+                    "stop" => {
                         println!("stop record was clicked");
 
                         switch_menu_items_states(
-                            &start_record_menu_item_clone.clone(),
-                            &stop_record_menu_item_clone.clone(),
+                            &start_menu_item_clone.clone(),
+                            &stop_menu_item_clone.clone(),
                             false,
                         );
 
@@ -233,9 +236,7 @@ pub fn run() {
                 .build(app)?;
             Ok(())
         })
-        .manage(AppState {
-            current_action_name: Mutex::new("dictate_text".to_string()),
-        })
+        // .manage(app_state)
         .plugin(tauri_plugin_opener::init())
         .invoke_handler(tauri::generate_handler![notify_change_action])
         .run(tauri::generate_context!())
@@ -243,16 +244,16 @@ pub fn run() {
 }
 
 fn switch_menu_items_states(
-    start_record_menu_item: &Arc<Mutex<MenuItem<Wry>>>,
-    stop_record_menu_item: &Arc<Mutex<MenuItem<Wry>>>,
+    start_menu_item: &Arc<Mutex<MenuItem<Wry>>>,
+    stop_menu_item: &Arc<Mutex<MenuItem<Wry>>>,
     is_start_recording: bool,
 ) {
-    start_record_menu_item
+    start_menu_item
         .lock()
         .unwrap()
         .set_enabled(!is_start_recording)
         .unwrap(); // Disabilita Stop
-    stop_record_menu_item
+    stop_menu_item
         .lock()
         .unwrap()
         .set_enabled(is_start_recording)

@@ -2,8 +2,8 @@ const {invoke} = window.__TAURI__.core;
 
 let actions = [];
 
-async function notify_change_action(selectedActionName) {
-    await invoke("notify_change_action", {name: selectedActionName});
+async function notify_change_action(selectedActionValue, selectedActionName) {
+    await invoke("notify_change_action", {value: selectedActionValue, name: selectedActionName});
     //alert(actionName);
 }
 
@@ -47,6 +47,6 @@ window.addEventListener("DOMContentLoaded", () => {
         const action = actions.at(actionIndex);
         selectedActionDescription.value = action.description;
         selectedActionDescription.tooltip = action.description;
-        notify_change_action(action.value)
+        notify_change_action(action.value, action.name)
     });
 });
