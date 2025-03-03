@@ -1,8 +1,3 @@
-// use tauri::{
-//     menu::{Menu, MenuItem},
-//     tray::TrayIconBuilder,
-// };
-
 use tauri::{
     menu::{Menu, MenuItem},
     tray::TrayIconBuilder,
@@ -12,11 +7,11 @@ use tauri::{
 use std::{
     process::{Child, Command},
     sync::{Arc, Mutex},
+    fs::File,
+    io::Read
 };
 
 use serde::Deserialize;
-use std::fs::File;
-use std::io::Read;
 
 struct AppState {
     current_action_name: Mutex<String>,
@@ -28,11 +23,6 @@ struct Config {
 }
 
 // Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
-#[tauri::command]
-fn greet(name: &str) -> String {
-    format!("Hello, {}! You've been greeted from Rust!", name)
-}
-
 #[tauri::command]
 fn notify_change_action(name: &str, state: State<AppState>) -> String {
     let mut current_action_name = state.current_action_name.lock().unwrap();
@@ -61,7 +51,6 @@ pub fn run() {
     // Parse del JSON nella struct `Config`
     let config: Config = serde_json::from_str(&content).expect("Failed to parse JSON");
 
-    // Stampa la struct deserializzata
     println!("config: {:?}", config);
 
     tauri::Builder::default()
@@ -190,7 +179,7 @@ pub fn run() {
             current_action_name: Mutex::new("dictate_text".to_string())
         })
         .plugin(tauri_plugin_opener::init())
-        .invoke_handler(tauri::generate_handler![greet, notify_change_action])
+        .invoke_handler(tauri::generate_handler![notify_change_action])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
