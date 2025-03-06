@@ -8,9 +8,7 @@ async function notify_change_action(selectedActionValue, selectedActionName) {
 }
 
 async function notify_ui_startup() {
-    const output = await invoke("notify_ui_startup", {});
-    alert(output);
-    return output;
+    return await invoke("notify_ui_startup", {});
 }
 
 window.addEventListener("DOMContentLoaded", async () => {

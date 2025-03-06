@@ -8,7 +8,6 @@ use tauri::{
 };
 
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
 use std::process::Stdio;
 use std::{
     fs::File,
@@ -16,6 +15,12 @@ use std::{
     process::{Child, Command},
     sync::{Arc, Mutex},
 };
+
+use domain::{AppState, AppConfig, ActionConfig, ActionsMetadata};
+
+pub mod domain;
+pub mod commands;
+
 // use tauri::GlobalShortcutManager;
 //
 // // Registriamo la scorciatoia CTRL + U
@@ -28,28 +33,11 @@ use std::{
 // );
 // });
 
-struct AppState {
-    menu_handle: Mutex<Menu<Wry>>,
-    current_action_value: Mutex<String>,
-}
-
-#[derive(Debug, Deserialize)]
-struct Config {
-    faster_whisper_folder: String,
-}
-
-#[derive(Debug, Deserialize, Serialize)]
-struct ActionsMetadata {
-    actions: HashMap<String, String>,
-}
-
 #[tauri::command]
 fn notify_ui_startup() -> String {
     let action_names: [&str; 3] = ["dictate_text", "ai_reply_text", "audio_to_text"];
 
-    let mut actions_metadata = ActionsMetadata {
-        actions: HashMap::new(),
-    };
+    let mut actions_metadata = ActionsMetadata::new();
 
     for action_name in &action_names {
         // TODO 1: find a way to use config
@@ -67,14 +55,18 @@ fn notify_ui_startup() -> String {
                 Ok(stdout)
             });
 
-        let action_value = action_output.unwrap_or_else(|e| {
+        let action_config_raw_output = action_output.unwrap_or_else(|e| {
             eprintln!("Errore durante l'esecuzione del comando: {}", e);
             "".to_string()
         });
 
+        let action_config = ActionConfig::parse_from_string(&action_config_raw_output);
+
+        println!("{:#?}", action_config);
+
         actions_metadata
             .actions
-            .insert(action_name.to_string(), action_value.to_string());
+            .insert(action_name.to_string(), action_config);
     }
 
     let json_actions_metadata =
@@ -119,6 +111,8 @@ fn notify_change_action(
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
+    // TODO: refactor extract method
+
     // Percorso del file JSON
     let file_config_path = "assets/config.json";
 
@@ -132,7 +126,9 @@ pub fn run() {
         .expect("Failed to read file");
 
     // Parse del JSON nella struct `Config`
-    let config: Config = serde_json::from_str(&content).expect("Failed to parse JSON");
+    let config: AppConfig = serde_json::from_str(&content).expect("Failed to parse JSON");
+
+    /////////////////////////77
 
     println!("config: {:?}", config);
 
