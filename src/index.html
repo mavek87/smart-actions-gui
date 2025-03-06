@@ -6,30 +6,35 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <title>Tauri App</title>
     <script type="module" src="/main.js" defer></script>
+    <link
+            rel="stylesheet"
+            href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css"
+    >
 </head>
 
 <body>
 <main class="container">
-    <label for="select-action">Choose the action</label>
-    <form class="row" id="action-form">
+    <br/>
+
+    <div>
+        <label for="select-action">Choose the action</label>
         <select id="select-action">
         </select>
-    </form>
+    </div>
 
     <br/>
 
-    <label for="selected-action-description">Action description</label>
-    <input width="100px" type="text" id="selected-action-description" readonly/>
-
-    <form class="row" id="description-form">
-    </form>
-    <br/>
+    <div>
+        <label for="selected-action-description">Action description</label>
+        <input width="100px" type="text" id="selected-action-description" readonly/>
+    </div>
 
     <br/>
+    <br/>
 
-    <form class="row" id="playground">
-        <textarea id="text-area_playground" rows="20" cols="80" placeholder="Playground text area..."></textarea>
-    </form>
+    <div class="row" id="playground">
+        <textarea id="text-area_playground" rows="10" placeholder="Playground text area..."></textarea>
+    </div>
 </main>
 </body>
 </html>

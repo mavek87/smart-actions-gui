@@ -52,7 +52,7 @@ fn notify_change_action(
         .unwrap()
         .as_menuitem()
         .unwrap()
-        .set_text(format!("Action: {}", name))
+        .set_text(format!("{}", name))
         .unwrap();
 
     let mut current_action_value = state.current_action_value.lock().unwrap();
@@ -91,7 +91,7 @@ pub fn run() {
             let process_start = Arc::new(Mutex::new(None::<Child>));
             let process_stop = Arc::new(Mutex::new(None::<Child>));
 
-            let action_state_item = MenuItemBuilder::new("Action: Dictate Text")
+            let action_state_item = MenuItemBuilder::new("Dictate Text")
                 .id("action_state_item")
                 .enabled(false)
                 .build(app)?;
