@@ -10,11 +10,89 @@
             rel="stylesheet"
             href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css"
     >
+<!--    <style>-->
+<!--        :root {-->
+<!--            &#45;&#45;pico-font-family-sans-serif: Inter, system-ui, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, Helvetica, Arial, "Helvetica Neue", sans-serif, var(&#45;&#45;pico-font-family-emoji);-->
+<!--            &#45;&#45;pico-font-size: 87.5%;-->
+<!--            /* Original: 100% */-->
+<!--            &#45;&#45;pico-line-height: 1.25;-->
+<!--            /* Original: 1.5 */-->
+<!--            &#45;&#45;pico-form-element-spacing-vertical: 0.5rem;-->
+<!--            /* Original: 1rem */-->
+<!--            &#45;&#45;pico-form-element-spacing-horizontal: 1.0rem;-->
+<!--            /* Original: 1.25rem */-->
+<!--            &#45;&#45;pico-border-radius: 0.375rem;-->
+<!--            /* Original: 0.25rem */-->
+<!--        }-->
+
+<!--        @media (min-width: 576px) {-->
+<!--            :root {-->
+<!--                &#45;&#45;pico-font-size: 87.5%;-->
+<!--                /* Original: 106.25% */-->
+<!--            }-->
+<!--        }-->
+
+<!--        @media (min-width: 768px) {-->
+<!--            :root {-->
+<!--                &#45;&#45;pico-font-size: 87.5%;-->
+<!--                /* Original: 112.5% */-->
+<!--            }-->
+<!--        }-->
+
+<!--        @media (min-width: 1024px) {-->
+<!--            :root {-->
+<!--                &#45;&#45;pico-font-size: 87.5%;-->
+<!--                /* Original: 118.75% */-->
+<!--            }-->
+<!--        }-->
+
+<!--        @media (min-width: 1280px) {-->
+<!--            :root {-->
+<!--                &#45;&#45;pico-font-size: 87.5%;-->
+<!--                /* Original: 125% */-->
+<!--            }-->
+<!--        }-->
+
+<!--        @media (min-width: 1536px) {-->
+<!--            :root {-->
+<!--                &#45;&#45;pico-font-size: 87.5%;-->
+<!--                /* Original: 131.25% */-->
+<!--            }-->
+<!--        }-->
+
+<!--        h1,-->
+<!--        h2,-->
+<!--        h3,-->
+<!--        h4,-->
+<!--        h5,-->
+<!--        h6 {-->
+<!--            &#45;&#45;pico-font-weight: 600;-->
+<!--            /* Original: 700 */-->
+<!--        }-->
+
+<!--        article {-->
+<!--            border: 1px solid var(&#45;&#45;pico-muted-border-color);-->
+<!--            /* Original doesn't have a border */-->
+<!--            border-radius: calc(var(&#45;&#45;pico-border-radius) * 2);-->
+<!--            /* Original: var(&#45;&#45;pico-border-radius) */-->
+<!--        }-->
+
+<!--        article>footer {-->
+<!--            border-radius: calc(var(&#45;&#45;pico-border-radius) * 2);-->
+<!--            /* Original: var(&#45;&#45;pico-border-radius) */-->
+<!--        }-->
+<!--    </style>-->
 </head>
 
 <body>
-<main class="container">
-    <br/>
+<!--<main class="container" style="transform: scale(0.8); transform-origin: 0 0; width: 500px;">-->
+<!--<main class="container-fluid" style="transform: scale(0.95);">-->
+<!--<main class="container-fluid" style="transform: scale(0.85);">-->
+<main class="container-fluid" style="transform: scale(1);">
+
+    <div class="row" id="playground">
+        <textarea id="text-area_playground" rows="10" placeholder="Playground text area..."></textarea>
+    </div>
 
     <div>
         <label for="select-action">Choose the action</label>
@@ -22,19 +100,19 @@
         </select>
     </div>
 
-    <br/>
-
     <div>
         <label for="selected-action-description">Action description</label>
-        <input width="100px" type="text" id="selected-action-description" readonly/>
+        <input width="100px" type="text" id="selected-action-description" data-tooltip="Right" data-placement="right"/>
     </div>
 
     <br/>
-    <br/>
 
-    <div class="row" id="playground">
-        <textarea id="text-area_playground" rows="10" placeholder="Playground text area..."></textarea>
-    </div>
+    <details open>
+        <summary>Action settings</summary>
+        <form id="form-action-props">
+        </form>
+    </details>
+
 </main>
 </body>
 </html>
