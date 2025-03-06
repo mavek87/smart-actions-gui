@@ -7,7 +7,16 @@ async function notify_change_action(selectedActionValue, selectedActionName) {
     //alert(actionName);
 }
 
-window.addEventListener("DOMContentLoaded", () => {
+async function notify_ui_startup() {
+    const output = await invoke("notify_ui_startup", {});
+    alert(output);
+    return output;
+}
+
+window.addEventListener("DOMContentLoaded", async () => {
+    const output = await notify_ui_startup();
+    console.log(output);
+
     const selectAction = document.getElementById("select-action");
     const selectedActionDescription = document.getElementById('selected-action-description');
 

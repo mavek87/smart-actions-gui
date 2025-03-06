@@ -1,18 +1,21 @@
 use tauri::{
-    menu::{AboutMetadataBuilder, MenuBuilder, MenuItem, MenuItemBuilder, SubmenuBuilder},
+    menu::{
+        AboutMetadataBuilder, CheckMenuItemBuilder, Menu, MenuBuilder, MenuItem, MenuItemBuilder,
+        SubmenuBuilder,
+    },
     tray::TrayIconBuilder,
     AppHandle, Manager, State, Wry,
 };
 
+use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
+use std::process::Stdio;
 use std::{
     fs::File,
     io::Read,
     process::{Child, Command},
     sync::{Arc, Mutex},
 };
-
-use serde::Deserialize;
-use tauri::menu::{CheckMenuItemBuilder, Menu};
 // use tauri::GlobalShortcutManager;
 //
 // // Registriamo la scorciatoia CTRL + U
@@ -33,6 +36,53 @@ struct AppState {
 #[derive(Debug, Deserialize)]
 struct Config {
     faster_whisper_folder: String,
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+struct ActionsMetadata {
+    actions: HashMap<String, String>,
+}
+
+#[tauri::command]
+fn notify_ui_startup() -> String {
+    let action_names: [&str; 3] = ["dictate_text", "ai_reply_text", "audio_to_text"];
+
+    let mut actions_metadata = ActionsMetadata {
+        actions: HashMap::new(),
+    };
+
+    for action_name in &action_names {
+        // TODO 1: find a way to use config
+        let action_output = Command::new("bash")
+            .arg("/opt/FasterWhisper/smart-actions.sh") // Nessun bisogno di `format!()`
+            .arg(action_name)
+            .arg("--print-config")
+            .stdout(Stdio::piped())
+            .spawn()
+            .and_then(|mut child| {
+                let mut stdout = String::new();
+                if let Some(ref mut out) = child.stdout {
+                    out.read_to_string(&mut stdout).ok();
+                }
+                Ok(stdout)
+            });
+
+        let action_value = action_output.unwrap_or_else(|e| {
+            eprintln!("Errore durante l'esecuzione del comando: {}", e);
+            "".to_string()
+        });
+
+        actions_metadata
+            .actions
+            .insert(action_name.to_string(), action_value.to_string());
+    }
+
+    let json_actions_metadata =
+        serde_json::to_string(&actions_metadata).expect("Failed to parse JSON");
+
+    println!("JSON delle azioni: {}", json_actions_metadata);
+
+    json_actions_metadata
 }
 
 // Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
@@ -277,7 +327,10 @@ pub fn run() {
         })
         // .manage(app_state)
         .plugin(tauri_plugin_opener::init())
-        .invoke_handler(tauri::generate_handler![notify_change_action])
+        .invoke_handler(tauri::generate_handler![
+            notify_change_action,
+            notify_ui_startup
+        ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
