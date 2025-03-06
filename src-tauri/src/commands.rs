@@ -32,7 +32,7 @@ pub fn notify_ui_startup() -> String {
 
         let action_config = ActionConfig::parse_from_string(&action_config_raw_output);
 
-        println!("{:#?}", action_config);
+        // println!("{:#?}", action_config);
 
         actions_metadata
             .actions

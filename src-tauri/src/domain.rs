@@ -1,7 +1,5 @@
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
-use std::fs;
-use std::path::Path;
 use std::sync::Mutex;
 use tauri::menu::Menu;
 use tauri::Wry;
@@ -86,8 +84,8 @@ impl ActionConfig {
         }
     }
 
-    fn from_file(path: &Path) -> std::io::Result<Self> {
-        let contents = fs::read_to_string(path)?;
-        Ok(Self::parse_from_string(&contents))
-    }
+    // fn from_file(path: &Path) -> std::io::Result<Self> {
+    //     let contents = fs::read_to_string(path)?;
+    //     Ok(Self::parse_from_string(&contents))
+    // }
 }

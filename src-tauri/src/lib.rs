@@ -51,9 +51,8 @@ pub fn run() {
     // Parse del JSON nella struct `Config`
     let config: AppConfig = serde_json::from_str(&content).expect("Failed to parse JSON");
 
-    /////////////////////////77
-
-    println!("config: {:?}", config);
+    // println!("config: {:?}", config);
+    /////////////////////////
 
     tauri::Builder::default()
         .setup(|app| {
