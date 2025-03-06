@@ -33,6 +33,7 @@ impl ActionsMetadata {
 
 #[derive(Debug, Deserialize, Serialize)]
 pub struct ActionConfig {
+    name: String,
     description: String,
     defaults: HashMap<String, String>,
     options: HashMap<String, String>,
@@ -42,6 +43,7 @@ pub struct ActionConfig {
 
 impl ActionConfig {
     pub fn parse_from_string(contents: &str) -> Self {
+        let mut name = String::new();
         let mut description = String::new();
         let mut defaults = HashMap::new();
         let mut options = HashMap::new();
@@ -58,7 +60,9 @@ impl ActionConfig {
                 let key = key.trim();
                 let value = value.trim().trim_matches('"'); // Rimuove eventuali virgolette
 
-                if key == "DESCRIPTION" {
+                if key == "NAME" {
+                    name = value.to_string();
+                } else if key == "DESCRIPTION" {
                     description = value.to_string();
                 } else if key.starts_with("DEFAULTS_") {
                     defaults.insert(key["DEFAULTS_".len()..].to_string(), value.to_string());
@@ -73,6 +77,7 @@ impl ActionConfig {
         }
 
         Self {
+            name,
             description,
             defaults,
             options,

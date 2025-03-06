@@ -2,6 +2,9 @@ const {invoke} = window.__TAURI__.core;
 
 let actions = [];
 
+const selectAction = document.getElementById("select-action");
+const selectedActionDescription = document.getElementById('selected-action-description');
+
 async function notify_change_action(selectedActionValue, selectedActionName) {
     await invoke("notify_change_action", {value: selectedActionValue, name: selectedActionName});
     //alert(actionName);
@@ -12,48 +15,34 @@ async function notify_ui_startup() {
 }
 
 window.addEventListener("DOMContentLoaded", async () => {
-    const output = await notify_ui_startup();
-    console.log(output);
+    const jsonOutput = await notify_ui_startup();
+    console.log(jsonOutput);
 
-    const selectAction = document.getElementById("select-action");
-    const selectedActionDescription = document.getElementById('selected-action-description');
+    if (jsonOutput) {
+        const resultObj = JSON.parse(jsonOutput);
+        console.log(resultObj);
 
-    fetch('assets/actions.json')
-        .then(response => {
-            if (!response.ok) {
-                throw new Error('Network response was not ok');
-            }
-            return response.json();
-        })
-        .then(data => {
-            data.actions.forEach((item, index) => {
-                let action = {
-                    index: index,
-                    value: item.value,
-                    name: item.name,
-                    description: item.description
-                }
+        actions = resultObj?.actions || [];
 
-                actions.push(action);
+        for (const [action_key, action_props] of Object.entries(actions)) {
+            console.log(`key: ${action_key}, value: ${action_props}`);
 
-                const option = document.createElement('option');
-                option.value = item.value;
-                option.textContent = item.name;
-                selectAction.appendChild(option);
-            });
+            const option = document.createElement('option');
+            option.value = action_key;
+            option.textContent = action_props.name;
+            selectAction.appendChild(option);
+        }
 
-            selectAction.selectedIndex = 0;
-            selectedActionDescription.value = actions.at(0).description;
-        })
-        .catch(error => {
-            window.alert('There was a problem with the fetch operation: ' + error);
-        });
+        selectAction.selectedIndex = 0;
+        const action = actions[selectAction.value]
+        selectedActionDescription.value = action.description;
+    }
 
     selectAction.addEventListener('change', function () {
-        const actionIndex = selectAction.selectedIndex;
-        const action = actions.at(actionIndex);
+        const actionValue = selectAction.value;
+        const action = actions[actionValue]
         selectedActionDescription.value = action.description;
-        selectedActionDescription.tooltip = action.description;
-        notify_change_action(action.value, action.name)
+
+        notify_change_action(actionValue, action.name)
     });
 });

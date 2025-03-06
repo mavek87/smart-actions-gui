@@ -18,7 +18,6 @@ use std::{
 };
 
 use domain::{AppConfig, AppState};
-
 use commands::{notify_change_action, notify_ui_startup};
 
 // use tauri::GlobalShortcutManager;

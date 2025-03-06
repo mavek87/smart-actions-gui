@@ -47,7 +47,6 @@ pub fn notify_ui_startup() -> String {
     json_actions_metadata
 }
 
-// Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
 #[tauri::command]
 pub fn notify_change_action(
     value: &str,
