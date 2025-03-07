@@ -3,6 +3,7 @@ use std::collections::HashMap;
 use std::sync::Mutex;
 use tauri::menu::Menu;
 use tauri::Wry;
+use indexmap::IndexMap;
 
 pub struct AppState {
     pub menu_handle: Mutex<Menu<Wry>>,
@@ -33,20 +34,20 @@ impl ActionsMetadata {
 pub struct ActionConfig {
     name: String,
     description: String,
-    defaults: HashMap<String, String>,
-    options: HashMap<String, String>,
+    defaults: IndexMap<String, String>,
+    options: IndexMap<String, String>,
     mandatory_options: Vec<String>,
-    examples: HashMap<String, String>,
+    examples: IndexMap<String, String>,
 }
 
 impl ActionConfig {
     pub fn parse_from_string(contents: &str) -> Self {
         let mut name = String::new();
         let mut description = String::new();
-        let mut defaults = HashMap::new();
-        let mut options = HashMap::new();
+        let mut defaults = IndexMap::new();
+        let mut options = IndexMap::new();
         let mut mandatory_options = Vec::new();
-        let mut examples = HashMap::new();
+        let mut examples = IndexMap::new();
 
         for line in contents.lines() {
             let line = line.trim();
