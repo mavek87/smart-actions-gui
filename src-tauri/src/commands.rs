@@ -1,10 +1,10 @@
-use crate::domain::{ActionConfig, ActionsMetadata, AppState};
+use crate::domain::{ActionConfig, ActionsMetadata, AppState, Action};
 use std::io::Read;
 use std::process::{Command, Stdio};
-use tauri::{AppHandle, State};
+use tauri::{command, AppHandle, State};
 
-#[tauri::command]
-pub fn notify_ui_startup() -> String {
+#[command]
+pub fn ui_notify_startup() -> String {
     let action_names: [&str; 3] = ["dictate_text", "ai_reply_text", "audio_to_text"];
 
     let mut actions_metadata = ActionsMetadata::new();
@@ -47,8 +47,8 @@ pub fn notify_ui_startup() -> String {
     json_actions_metadata
 }
 
-#[tauri::command]
-pub fn notify_change_action(
+#[command]
+pub fn ui_notify_change_action(
     value: &str,
     name: &str,
     state: State<AppState>,
@@ -76,4 +76,16 @@ pub fn notify_change_action(
     // kind.as_menuitem().unwrap().set_text(format!("{}", name)).unwrap();
 
     current_action_value.to_string()
+}
+
+#[command]
+pub fn ui_request_execute_action(json_action: String) {
+
+    // println!("AAAAAAAAAAAAAAAAAAAAAAAAAAA\n\n\n");
+
+    // println!("{}", &json_action);
+
+    let action: Action = serde_json::from_str(&json_action).expect("Failed to parse JSON");
+    println!("?:{:?}", action);
+    // println!("?:{}", action);
 }

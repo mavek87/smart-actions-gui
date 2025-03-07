@@ -1,9 +1,10 @@
-use serde::{Deserialize, Serialize};
+use serde::{Deserialize, Deserializer, Serialize};
 use std::collections::HashMap;
 use std::sync::Mutex;
 use tauri::menu::Menu;
 use tauri::Wry;
 use indexmap::IndexMap;
+use serde_json::Value;
 
 pub struct AppState {
     pub menu_handle: Mutex<Menu<Wry>>,
@@ -31,6 +32,14 @@ impl ActionsMetadata {
 }
 
 #[derive(Debug, Deserialize, Serialize)]
+pub struct Action {
+    name: String,
+    value: String,
+    description: String,
+    args: Vec<HashMap<String, String>>,
+}
+
+#[derive(Debug, Deserialize, Serialize)]
 pub struct ActionConfig {
     name: String,
     description: String,
@@ -52,7 +61,7 @@ impl ActionConfig {
         for line in contents.lines() {
             let line = line.trim();
             if line.is_empty() || line.starts_with('#') {
-                continue; // Salta le righe vuote e i commenti
+                continue; // Skip empty rows and comments
             }
 
             if let Some((key, value)) = line.split_once('=') {
@@ -84,9 +93,4 @@ impl ActionConfig {
             examples,
         }
     }
-
-    // fn from_file(path: &Path) -> std::io::Result<Self> {
-    //     let contents = fs::read_to_string(path)?;
-    //     Ok(Self::parse_from_string(&contents))
-    // }
 }

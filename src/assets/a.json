@@ -57,6 +57,15 @@
       }
     },
     "audio_to_text": {
+      "de2": {
+        "value": "audio_to_text",
+        "description": "Convert an audio file to a text.",
+        "input_file": "",
+        "language": "",
+        "model": "medium",
+        "task": "transcribe",
+        "name": "Audio to text"
+      },
       "name": "Audio to text",
       "description": "Convert an audio file to a text.",
       "defaults": {

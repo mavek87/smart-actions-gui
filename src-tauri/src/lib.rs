@@ -18,7 +18,7 @@ use std::{
 };
 
 use domain::{AppConfig, AppState};
-use commands::{notify_change_action, notify_ui_startup};
+use commands::{ui_notify_change_action, ui_notify_startup, ui_request_execute_action};
 
 // use tauri::GlobalShortcutManager;
 //
@@ -246,8 +246,9 @@ pub fn run() {
         // .manage(app_state)
         .plugin(tauri_plugin_opener::init())
         .invoke_handler(tauri::generate_handler![
-            notify_change_action,
-            notify_ui_startup
+            ui_notify_change_action,
+            ui_notify_startup,
+            ui_request_execute_action
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
@@ -269,3 +270,4 @@ fn switch_menu_items_states(
         .set_enabled(is_start_recording)
         .unwrap(); // Abilita Start
 }
+

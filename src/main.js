@@ -8,17 +8,21 @@ const selectAction = document.getElementById("select-action");
 const selectedActionDescription = document.getElementById('selected-action-description');
 const divActionProps = document.getElementById("div-action-props");
 
-async function notify_change_action(selectedActionValue, selectedActionName) {
-    await invoke("notify_change_action", {value: selectedActionValue, name: selectedActionName});
+async function ui_notify_change_action(selectedActionValue, selectedActionName) {
+    await invoke("ui_notify_change_action", {value: selectedActionValue, name: selectedActionName});
     //alert(actionName);
 }
 
-async function notify_ui_startup() {
-    return await invoke("notify_ui_startup", {});
+async function ui_notify_startup() {
+    return await invoke("ui_notify_startup", {});
+}
+
+async function ui_request_execute_action(jsonAction) {
+    await invoke("ui_request_execute_action", {jsonAction});
 }
 
 window.addEventListener("DOMContentLoaded", async () => {
-    const jsonOutput = await notify_ui_startup();
+    const jsonOutput = await ui_notify_startup();
 
     if (jsonOutput) {
         const resultObj = JSON.parse(jsonOutput);
@@ -47,21 +51,43 @@ window.addEventListener("DOMContentLoaded", async () => {
 
         populateSettingsForAction(action);
 
-        notify_change_action(actionValue, action.name)
+        ui_notify_change_action(actionValue, action.name)
     });
 
+    // TODO: a code refactoring is needed
     formAction.addEventListener('submit', function (event) {
         event.preventDefault();
 
+        // This is gathered from the form fields
         const formData = new FormData(this);
         const data = Object.fromEntries(formData.entries());
 
-        console.log(JSON.stringify(data));
+        const selectedActionInUI = actions[selectAction.value];
+        // console.log(selectedActionInUI);
+        let selectedAction = selectAction.options[selectAction.selectedIndex];
+        let selectedActionName = selectedAction.text;
 
-        alert("data.action_value: " + data.action_value)
-        alert("data.action_name: " + data.action_name)
+        const action = {
+            value: data.value,
+            name: selectedActionName,
+            description: data.description,
+            args: []
+        };
 
-        // TODO: ask server to exec action!  frontend.send(action) => server.exec(action)
+        for (const [key, value] of Object.entries(data)) {
+            if (key !== 'value' && key !== 'description') {
+                let argument = selectedActionInUI.options[`${key}`];
+                argument = argument.split("|")[0].trim();
+                action.args.push({
+                    [`${key}`]: value,
+                    arg: argument
+                });
+            }
+        }
+
+        const jsonAction = JSON.stringify(action);
+
+        ui_request_execute_action(jsonAction);
     });
 });
 
