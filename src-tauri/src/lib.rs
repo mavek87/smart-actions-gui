@@ -17,12 +17,11 @@ use std::{
     process::{Child, Command},
     sync::{Arc, Mutex},
 };
-
 use commands::{ui_notify_change_action, ui_notify_startup, ui_request_execute_action};
-use domain::{AppConfig, AppState};
+use domain::app_state::AppState;
 
 use menu_action_state_manager::MenuActionStateManager;
-
+use crate::domain::app_config::AppConfig;
 // use tauri::GlobalShortcutManager;
 //
 // // Registriamo la scorciatoia CTRL + U

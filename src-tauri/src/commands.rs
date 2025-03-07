@@ -1,7 +1,10 @@
-use crate::domain::{ActionConfig, ActionsMetadata, AppState, Action};
 use std::io::Read;
 use std::process::{Command, Stdio};
 use tauri::{command, AppHandle, State};
+use crate::domain::action::Action;
+use crate::domain::action_config::ActionConfig;
+use crate::domain::actions_metadata::ActionsMetadata;
+use crate::domain::app_state::AppState;
 
 #[command]
 pub fn ui_notify_startup() -> String {
