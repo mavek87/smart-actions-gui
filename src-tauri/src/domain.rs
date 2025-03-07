@@ -1,14 +1,58 @@
+use indexmap::IndexMap;
 use serde::{Deserialize, Deserializer, Serialize};
 use std::collections::HashMap;
 use std::sync::Mutex;
 use tauri::menu::Menu;
 use tauri::Wry;
-use indexmap::IndexMap;
 
 pub struct AppState {
     pub menu_handle: Mutex<Menu<Wry>>,
     pub current_action_value: Mutex<String>,
 }
+
+pub struct AppStateManager {
+    pub state: AppState,
+}
+
+impl AppStateManager {
+    pub fn new(app_state: AppState) -> Self {
+        Self { state: app_state }
+    }
+
+    pub fn a(&self) {
+
+    }
+
+    // pub fn stampa(&self) {
+    //     self.state.current_action_value.lock()
+    //     println!("ciao");
+    // }
+}
+
+// struct Persona {
+//     nome: String,
+//     eta: u8,
+// }
+//
+// impl Persona {
+//     // Costruttore "new"
+//     fn new(nome: &str, eta: u8) -> Self {
+//         Self {
+//             nome: nome.to_string(),
+//             eta,
+//         }
+//     }
+//
+//     // Metodo che restituisce una stringa
+//     fn saluta(&self) -> String {
+//         format!("Ciao, mi chiamo {} e ho {} anni.", self.nome, self.eta)
+//     }
+//
+//     // Metodo che modifica un campo
+//     fn invecchia(&mut self) {
+//         self.eta += 1;
+//     }
+// }
 
 // TODO: add the app config into the app state as a mutex
 

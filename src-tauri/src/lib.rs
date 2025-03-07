@@ -1,13 +1,14 @@
-mod domain;
 mod commands;
+mod domain;
+mod menu_action_state_manager;
 
 use tauri::{
     menu::{
         AboutMetadataBuilder, CheckMenuItemBuilder, MenuBuilder, MenuItem, MenuItemBuilder,
         SubmenuBuilder,
     },
-    tray::TrayIconBuilder
-    , Manager, State, Wry,
+    tray::TrayIconBuilder,
+    Manager, State,
 };
 
 use std::{
@@ -17,8 +18,10 @@ use std::{
     sync::{Arc, Mutex},
 };
 
-use domain::{AppConfig, AppState};
 use commands::{ui_notify_change_action, ui_notify_startup, ui_request_execute_action};
+use domain::{AppConfig, AppState};
+
+use menu_action_state_manager::MenuActionStateManager;
 
 // use tauri::GlobalShortcutManager;
 //
@@ -134,6 +137,12 @@ pub fn run() {
                 .item(&quit_item)
                 .build()?;
 
+            let menu_action_state_manager = Arc::new(Mutex::new(MenuActionStateManager::new(
+                Arc::clone(&start_menu_item),
+                Arc::clone(&stop_menu_item),
+            )));
+
+            // TODO: add the menu state manager in the app_state
             let app_state = AppState {
                 current_action_value: Mutex::new("dictate_text".to_string()),
                 menu_handle: Mutex::new(menu.clone()),
@@ -157,9 +166,6 @@ pub fn run() {
                 }
             });
 
-            let start_menu_item_clone = Arc::clone(&start_menu_item);
-            let stop_menu_item_clone = Arc::clone(&stop_menu_item);
-
             TrayIconBuilder::new()
                 .icon(app.default_window_icon().unwrap().clone())
                 .menu(&menu)
@@ -168,11 +174,10 @@ pub fn run() {
                     "start" => {
                         println!("start record was clicked");
 
-                        switch_menu_items_states(
-                            &start_menu_item_clone,
-                            &stop_menu_item_clone,
-                            true,
-                        );
+                        menu_action_state_manager
+                            .lock()
+                            .unwrap()
+                            .set_action_started();
 
                         let mut process_start = process_start.lock().unwrap();
 
@@ -196,11 +201,10 @@ pub fn run() {
                     "stop" => {
                         println!("stop record was clicked");
 
-                        switch_menu_items_states(
-                            &start_menu_item_clone.clone(),
-                            &stop_menu_item_clone.clone(),
-                            false,
-                        );
+                        menu_action_state_manager
+                            .lock()
+                            .unwrap()
+                            .set_action_stopped();
 
                         // Gestione del processo di registrazione
                         let mut process_stop = process_stop.lock().unwrap();
@@ -253,21 +257,3 @@ pub fn run() {
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
-
-fn switch_menu_items_states(
-    start_menu_item: &Arc<Mutex<MenuItem<Wry>>>,
-    stop_menu_item: &Arc<Mutex<MenuItem<Wry>>>,
-    is_start_recording: bool,
-) {
-    start_menu_item
-        .lock()
-        .unwrap()
-        .set_enabled(!is_start_recording)
-        .unwrap(); // Disabilita Stop
-    stop_menu_item
-        .lock()
-        .unwrap()
-        .set_enabled(is_start_recording)
-        .unwrap(); // Abilita Start
-}
-
