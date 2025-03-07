@@ -4,7 +4,6 @@ use std::sync::Mutex;
 use tauri::menu::Menu;
 use tauri::Wry;
 use indexmap::IndexMap;
-use serde_json::Value;
 
 pub struct AppState {
     pub menu_handle: Mutex<Menu<Wry>>,
