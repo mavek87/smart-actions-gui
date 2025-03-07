@@ -1,4 +1,4 @@
-pub mod action;
+pub mod smart_action;
 pub mod action_config;
 pub mod app_state;
 pub mod app_config;

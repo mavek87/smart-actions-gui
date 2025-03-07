@@ -19,18 +19,13 @@ use std::{
 };
 
 use commands::{
-    ui_notify_change_action::ui_notify_change_action,
-    ui_notify_startup::ui_notify_startup,
+    ui_notify_change_action::ui_notify_change_action, ui_notify_startup::ui_notify_startup,
     ui_request_execute_action::ui_request_execute_action,
 };
 
-use domain::{
-    app_state::AppState,
-    app_config::AppConfig,
-};
+use domain::{app_config::AppConfig, app_state::AppState};
 
-use logic::menu_action_state_manager::MenuActionStateManager;
-
+use logic::menu_action_state_manager::MenuManager;
 
 // use tauri::GlobalShortcutManager;
 //
@@ -71,12 +66,14 @@ pub fn run() {
             let process_start = Arc::new(Mutex::new(None::<Child>));
             let process_stop = Arc::new(Mutex::new(None::<Child>));
 
-            let action_state_item = MenuItemBuilder::new("Dictate Text")
-                .id("action_state_item")
-                .enabled(false)
-                .build(app)?;
+            let action_name_menu_item = Arc::new(Mutex::new(
+                MenuItemBuilder::new("Dictate Text")
+                    .id("action_name_menu_item")
+                    .enabled(false)
+                    .build(app)?,
+            ));
 
-            let start_menu_item = Arc::new(Mutex::new(MenuItem::with_id(
+            let start_action_menu_item = Arc::new(Mutex::new(MenuItem::with_id(
                 app,
                 "start",
                 "Start",
@@ -84,7 +81,7 @@ pub fn run() {
                 Some("Ctrl+N"),
             )?));
 
-            let stop_menu_item = Arc::new(Mutex::new(MenuItem::with_id(
+            let stop_action_menu_item = Arc::new(Mutex::new(MenuItem::with_id(
                 app,
                 "stop",
                 "Stop",
@@ -132,11 +129,11 @@ pub fn run() {
                 .build(app)?;
 
             let menu = MenuBuilder::new(app)
-                .item(&action_state_item)
+                .item(&*action_name_menu_item.lock().unwrap())
                 .separator()
                 .items(&[
-                    &*start_menu_item.lock().unwrap(),
-                    &*stop_menu_item.lock().unwrap(),
+                    &*start_action_menu_item.lock().unwrap(),
+                    &*stop_action_menu_item.lock().unwrap(),
                 ])
                 .separator()
                 .item(&language_submenu)
@@ -146,15 +143,16 @@ pub fn run() {
                 .item(&quit_item)
                 .build()?;
 
-            let menu_action_state_manager = Arc::new(Mutex::new(MenuActionStateManager::new(
-                Arc::clone(&start_menu_item),
-                Arc::clone(&stop_menu_item),
-            )));
+            let menu_action_state_manager = MenuManager::new(
+                Arc::clone(&action_name_menu_item),
+                Arc::clone(&start_action_menu_item),
+                Arc::clone(&stop_action_menu_item),
+            );
 
-            // TODO: add the menu state manager in the app_state
             let app_state = AppState {
                 current_action_value: Mutex::new("dictate_text".to_string()),
-                menu_handle: Mutex::new(menu.clone()),
+                // menu_handle: Mutex::new(menu.clone()),
+                menu_manager: Mutex::new(menu_action_state_manager.clone()),
             };
 
             app.manage(app_state);
@@ -182,16 +180,16 @@ pub fn run() {
                 .on_menu_event(move |app, event| match event.id.as_ref() {
                     "start" => {
                         println!("start record was clicked");
+                        let app_state: State<AppState> = app.state();
 
-                        menu_action_state_manager
+                        app_state
+                            .menu_manager
                             .lock()
                             .unwrap()
                             .set_action_started();
 
-                        let mut process_start = process_start.lock().unwrap();
-
-                        let app_state: State<AppState> = app.state();
                         let current_action_name = app_state.current_action_value.lock().unwrap();
+                        let mut process_start = process_start.lock().unwrap();
 
                         if process_start.is_none() {
                             let child = Command::new("bash")
@@ -209,8 +207,10 @@ pub fn run() {
                     }
                     "stop" => {
                         println!("stop record was clicked");
+                        let app_state: State<AppState> = app.state();
 
-                        menu_action_state_manager
+                        app_state
+                            .menu_manager
                             .lock()
                             .unwrap()
                             .set_action_stopped();
