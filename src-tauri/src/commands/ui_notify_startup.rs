@@ -1,5 +1,5 @@
-use crate::domain::action_config::ActionConfig;
 use crate::domain::actions_metadata::ActionsMetadata;
+use crate::logic::action_config_parser::ActionConfigParser;
 use std::io::Read;
 use std::process::{Command, Stdio};
 use tauri::command;
@@ -31,7 +31,7 @@ pub fn ui_notify_startup() -> String {
             "".to_string()
         });
 
-        let action_config = ActionConfig::parse_from_string(&action_config_raw_output);
+        let action_config = ActionConfigParser::parse_from_string(&action_config_raw_output);
 
         // println!("{:#?}", action_config);
 
