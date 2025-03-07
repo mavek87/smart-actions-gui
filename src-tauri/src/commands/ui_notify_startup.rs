@@ -1,10 +1,8 @@
-use std::io::Read;
-use std::process::{Command, Stdio};
-use tauri::{command, AppHandle, State};
-use crate::domain::action::Action;
 use crate::domain::action_config::ActionConfig;
 use crate::domain::actions_metadata::ActionsMetadata;
-use crate::domain::app_state::AppState;
+use std::io::Read;
+use std::process::{Command, Stdio};
+use tauri::command;
 
 #[command]
 pub fn ui_notify_startup() -> String {
@@ -48,47 +46,4 @@ pub fn ui_notify_startup() -> String {
     println!("JSON delle azioni: {}", json_actions_metadata);
 
     json_actions_metadata
-}
-
-#[command]
-pub fn ui_notify_change_action(
-    value: &str,
-    name: &str,
-    state: State<AppState>,
-    _app: AppHandle,
-) -> String {
-    println!("value: {}", value);
-    println!("name: {}", name);
-
-    let menu_handle = state.menu_handle.lock().unwrap();
-    menu_handle
-        .get("action_state_item")
-        .unwrap()
-        .as_menuitem()
-        .unwrap()
-        .set_text(format!("{}", name))
-        .unwrap();
-
-    let mut current_action_value = state.current_action_value.lock().unwrap();
-
-    *current_action_value = value.to_string();
-    println!("current_action_value: {}", value);
-
-    // let menu = app.menu().unwrap();
-    // let kind = menu.get("action_state_item").unwrap();
-    // kind.as_menuitem().unwrap().set_text(format!("{}", name)).unwrap();
-
-    current_action_value.to_string()
-}
-
-#[command]
-pub fn ui_request_execute_action(json_action: String) {
-
-    // println!("AAAAAAAAAAAAAAAAAAAAAAAAAAA\n\n\n");
-
-    // println!("{}", &json_action);
-
-    let action: Action = serde_json::from_str(&json_action).expect("Failed to parse JSON");
-    println!("?:{:?}", action);
-    // println!("?:{}", action);
 }
