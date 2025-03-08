@@ -20,8 +20,7 @@ pub fn ui_notify_change_action(
         .unwrap()
         .set_action_name_text(format!("{}", smart_action.name));
 
-    let mut binding = state.current_smart_action.lock().unwrap();
-    let current_action_value = &mut binding.value;
+    let current_action_value = &mut state.current_smart_action.lock().unwrap().value;
 
     *current_action_value = Arc::new(Mutex::new(smart_action.value));
 

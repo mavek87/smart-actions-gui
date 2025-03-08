@@ -10,10 +10,11 @@ pub struct SmartAction {
     pub args: Vec<HashMap<String, String>>,
 }
 
+#[allow(dead_code)]
 pub struct SmartActionState {
-    pub name: Arc<Mutex<String>>,
+    pub name: Arc<Mutex<String>>, // TODO: remove this field and allow(dead_code) if not used
     pub value: Arc<Mutex<String>>,
-    pub description: Arc<Mutex<String>>,
+    pub description: Arc<Mutex<String>>, // TODO: remove this field and allow(dead_code) if not used
     pub args: Arc<Mutex<Vec<HashMap<String, String>>>>,
 }
 
