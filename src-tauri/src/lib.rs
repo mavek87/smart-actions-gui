@@ -23,7 +23,7 @@ use commands::{
 
 use domain::app_state::AppState;
 
-use crate::domain::smart_action::SmartAction;
+use crate::domain::smart_action::{SmartAction, SmartActionState};
 use logic::config_manager::ConfigManager;
 use logic::menu_manager::MenuManager;
 
@@ -133,7 +133,7 @@ pub fn run() {
             };
 
             let app_state = AppState {
-                current_smart_action: Mutex::new(current_smart_action),
+                current_smart_action: Mutex::new(SmartActionState::new(current_smart_action)),
                 menu_manager: Mutex::new(menu_manager.clone()),
             };
 
@@ -167,10 +167,10 @@ pub fn run() {
                         app_state.menu_manager.lock().unwrap().set_action_started();
                         println!("1");
 
-                        let current_smart_action_value =
-                            &app_state.current_smart_action.lock().unwrap().value;
-                        let current_smart_action_args =
-                            &app_state.current_smart_action.lock().unwrap().args;
+                        let x = &app_state.current_smart_action.lock().unwrap();
+
+                        let current_smart_action_value = x.value.lock().unwrap();
+                        // let current_smart_action_args = x.args.lock().unwrap();
 
                         println!("2");
 
