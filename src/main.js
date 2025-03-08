@@ -1,13 +1,5 @@
 const {invoke} = window.__TAURI__.core;
 
-let actions = [];
-
-const submitFormAction = document.getElementById("submit_form_action");
-const formAction = document.getElementById("form-action");
-const selectAction = document.getElementById("select-action");
-const selectedActionDescription = document.getElementById('selected-action-description');
-const divActionProps = document.getElementById("div-action-props");
-
 async function ui_notify_change_action(selectedActionValue, selectedActionName) {
     await invoke("ui_notify_change_action", {value: selectedActionValue, name: selectedActionName});
     //alert(actionName);
@@ -21,6 +13,22 @@ async function ui_request_execute_action(jsonAction) {
     await invoke("ui_request_execute_action", {jsonAction});
 }
 
+let actions = [];
+let currentAction;
+
+const button_submitFormAction = document.getElementById("button_submit-form-action");
+const form_action = document.getElementById("form_action");
+const select_action = document.getElementById("select_action");
+const input_ActionDescription = document.getElementById('input_action-description');
+const div_actionProps = document.getElementById("div_action-props");
+
+button_submitFormAction.addEventListener('click', function () {
+    form_action.submit();
+    const jsonAction = JSON.stringify(currentAction);
+    ui_request_execute_action(jsonAction);
+});
+
+// TODO: fix needed. When started action is not aligned with tray bar
 window.addEventListener("DOMContentLoaded", async () => {
     const jsonOutput = await ui_notify_startup();
 
@@ -30,24 +38,23 @@ window.addEventListener("DOMContentLoaded", async () => {
         actions = resultObj?.actions || [];
 
         for (const [action_key, action_props] of Object.entries(actions)) {
-
             const option = document.createElement('option');
             option.value = action_key;
             option.textContent = action_props.name;
-            selectAction.appendChild(option);
+            select_action.appendChild(option);
         }
 
-        selectAction.selectedIndex = 0;
-        const action = actions[selectAction.value]
-        selectedActionDescription.value = action.description;
+        select_action.selectedIndex = 0;
+        const action = actions[select_action.value]
+        input_ActionDescription.value = action.description;
 
         populateSettingsForAction(action);
     }
 
-    selectAction.addEventListener('change', function () {
-        const actionValue = selectAction.value;
+    select_action.addEventListener('change', function () {
+        const actionValue = select_action.value;
         const action = actions[actionValue]
-        selectedActionDescription.value = action.description;
+        input_ActionDescription.value = action.description;
 
         populateSettingsForAction(action);
 
@@ -55,16 +62,16 @@ window.addEventListener("DOMContentLoaded", async () => {
     });
 
     // TODO: a code refactoring is needed
-    formAction.addEventListener('submit', function (event) {
+    form_action.addEventListener('submit', function (event) {
         event.preventDefault();
 
         // This is gathered from the form fields
         const formData = new FormData(this);
         const data = Object.fromEntries(formData.entries());
 
-        const selectedActionInUI = actions[selectAction.value];
+        const selectedActionInUI = actions[select_action.value];
         // console.log(selectedActionInUI);
-        let selectedAction = selectAction.options[selectAction.selectedIndex];
+        let selectedAction = select_action.options[select_action.selectedIndex];
         let selectedActionName = selectedAction.text;
 
         const action = {
@@ -85,14 +92,12 @@ window.addEventListener("DOMContentLoaded", async () => {
             }
         }
 
-        const jsonAction = JSON.stringify(action);
-
-        ui_request_execute_action(jsonAction);
+        currentAction = action;
     });
 });
 
 function populateSettingsForAction(action) {
-    divActionProps.innerHTML = '';
+    div_actionProps.innerHTML = '';
 
     const maxElementsPerRow = 3;
     let counterElementsInRow = 0;
@@ -102,7 +107,7 @@ function populateSettingsForAction(action) {
         if (counterElementsInRow % maxElementsPerRow === 0) {
             divWithGrid = document.createElement("div");
             divWithGrid.className = "grid";
-            divActionProps.appendChild(divWithGrid);
+            div_actionProps.appendChild(divWithGrid);
         }
 
         const inputText = document.createElement('input');

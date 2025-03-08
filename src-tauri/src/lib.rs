@@ -12,7 +12,6 @@ use tauri::{
 };
 
 use std::{
-    io::Read,
     process::{Child, Command},
     sync::{Arc, Mutex},
 };
