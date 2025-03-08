@@ -14,6 +14,7 @@ async function ui_request_execute_action(jsonSmartAction) {
 
 let actions = [];
 let currentSmartAction;
+let inputListeners = [];
 
 const form_action = document.getElementById("form_action");
 const select_action = document.getElementById("select_action");
@@ -23,20 +24,12 @@ const button_submitFormAction = document.getElementById("button_submit-form-acti
 
 select_action.addEventListener('change', function () {
     populateViewForAction();
-
-    currentSmartAction = extractSmartActionFromForm();
-
-    ui_notify_change_action(JSON.stringify(currentSmartAction))
+    notify_change_smart_action_to_tauri();
 });
 
 button_submitFormAction.addEventListener('click', function (e) {
     e.preventDefault();
-
-    currentSmartAction = extractSmartActionFromForm();
-
-    const jsonSmartAction = JSON.stringify(currentSmartAction);
-
-    ui_request_execute_action(jsonSmartAction);
+    ui_request_execute_action(extractSmartActionJsonFromForm());
 });
 
 window.addEventListener("DOMContentLoaded", async () => {
@@ -58,6 +51,15 @@ window.addEventListener("DOMContentLoaded", async () => {
         populateViewForAction();
     }
 });
+
+function notify_change_smart_action_to_tauri() {
+    ui_notify_change_action(extractSmartActionJsonFromForm());
+}
+
+function extractSmartActionJsonFromForm() {
+    currentSmartAction = extractSmartActionFromForm();
+    return JSON.stringify(currentSmartAction);
+}
 
 function extractSmartActionFromForm() {
     // This is gathered from the form fields
@@ -95,6 +97,12 @@ function populateViewForAction() {
 }
 
 function populateViewSettingsForAction(action) {
+    console.log(`cleaning ${inputListeners?.length || 0} input listeners`);
+    inputListeners.forEach(listener => {
+        console.log("clean input listener for id: " + listener.elementId);
+        listener.elementInstance.removeEventListener('input', listener.listenerFn);
+    });
+    inputListeners = [];
     div_actionProps.innerHTML = '';
 
     const maxElementsPerRow = 3;
@@ -113,6 +121,16 @@ function populateViewSettingsForAction(action) {
         inputText.value = action_default_value || "";
         inputText.id = 'form-action-props_input_' + action_default_key;
         inputText.name = action_default_key;
+        const inputChangeListener = function (event) {
+            console.log(event.target.value);
+            notify_change_smart_action_to_tauri();
+        }
+        inputText.addEventListener('input', inputChangeListener);
+        inputListeners.push({
+            elementId: inputText.id,
+            elementInstance: inputText,
+            listenerFn: inputChangeListener
+        });
 
         const labelText = document.createElement('label');
         labelText.id = 'form-action-props_label_' + action_default_key
@@ -127,6 +145,8 @@ function populateViewSettingsForAction(action) {
 
         counterElementsInRow++;
     }
+
+    console.log(`attached ${inputListeners.length} input listeners`)
 }
 
 function convertSnakeToSpace(str) {
