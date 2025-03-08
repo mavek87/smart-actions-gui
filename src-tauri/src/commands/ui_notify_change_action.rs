@@ -13,11 +13,11 @@ pub fn ui_notify_change_action(
     let smart_action: SmartAction =
         serde_json::from_str(&json_smart_action).expect("Failed to parse JSON Smart Action");
 
-    state
-        .menu_manager
-        .lock()
-        .unwrap()
-        .set_action_name_text(format!("{}", smart_action.name));
+    // state
+    //     .menu_manager
+    //     .lock()
+    //     .unwrap()
+    //     .set_action_name_text(format!("{}", smart_action.name));
 
     state
         .smart_action_manager

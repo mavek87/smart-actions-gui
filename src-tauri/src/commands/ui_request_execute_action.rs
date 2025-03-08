@@ -3,10 +3,18 @@ use crate::domain::smart_action::SmartAction;
 use tauri::{command, State};
 
 #[command]
-pub fn ui_request_execute_action(json_smart_action: String, app_state: State<AppState>) {
+pub fn ui_request_execute_action(
+    json_smart_action: String,
+    app_state: State<AppState>,
+    // app: tauri::AppHandle,
+) {
     let smart_action: SmartAction =
         serde_json::from_str(&json_smart_action).expect("Failed to parse JSON");
-    println!("ui_request_execute_action :- SmartAction ?:{:?}", smart_action);
+
+    // println!(
+    //     "ui_request_execute_action :- SmartAction ?:{:?}",
+    //     smart_action
+    // );
 
     let smart_action_manager = &app_state.smart_action_manager;
     smart_action_manager.change_current_smart_action(smart_action);

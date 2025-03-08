@@ -3,25 +3,29 @@ use crate::domain::smart_action::{SmartAction, SmartActionState};
 use crate::logic::menu_manager::MenuManager;
 use std::process::{Child, Command};
 use std::sync::Mutex;
+use tauri::{AppHandle, Emitter};
 
 pub struct SmartActionManager {
-    smart_action_state: Mutex<SmartActionState>,
+    app_handle: AppHandle,
     app_config: AppConfig,
     menu_manager: Mutex<MenuManager>,
+    smart_action_state: Mutex<SmartActionState>,
     process_start: Mutex<Option<Child>>,
     process_stop: Mutex<Option<Child>>,
 }
 
 impl SmartActionManager {
     pub fn new(
+        app_handle: AppHandle,
         app_config: AppConfig,
         menu_manager: MenuManager,
         smart_action: SmartAction,
     ) -> Self {
         SmartActionManager {
+            app_handle,
             app_config,
-            smart_action_state: Mutex::new(SmartActionState::new(smart_action)),
             menu_manager: Mutex::new(menu_manager),
+            smart_action_state: Mutex::new(SmartActionState::new(smart_action)),
             process_start: Mutex::new(None::<Child>),
             process_stop: Mutex::new(None::<Child>),
         }
@@ -29,9 +33,16 @@ impl SmartActionManager {
 
     pub fn change_current_smart_action(&self, new_smart_action: SmartAction) {
         let mut current_smart_action = self.smart_action_state.lock().unwrap();
-        *current_smart_action = SmartActionState::new(new_smart_action);
+        *current_smart_action = SmartActionState::new(new_smart_action.clone());
+
+        let action_name = format!("{}", new_smart_action.name);
+        self.menu_manager
+            .lock()
+            .unwrap()
+            .set_action_name_text(action_name);
     }
 
+    // TODO: handle errors
     pub fn start_current_smart_action(&self) {
         // TODO: unlock if error occurs
         self.menu_manager.lock().unwrap().set_action_started();
@@ -81,6 +92,11 @@ impl SmartActionManager {
                 .expect("Failed to start 'dictate_text' action from smart-actions.sh");
 
             *self.process_start.lock().unwrap() = Some(process_command_smart_action);
+
+            self.app_handle
+                .emit("smart_action_recording_start", "start recording...")
+                .unwrap();
+
             println!("Recording started!");
         } else {
             println!("Recording is already running.");
@@ -90,6 +106,10 @@ impl SmartActionManager {
     pub fn stop_current_smart_action(&self) {
         // TODO: unlock if error occurs (???)
         self.menu_manager.lock().unwrap().set_action_stopped();
+
+        self.app_handle
+            .emit("smart_action_waiting_start", "start waiting...")
+            .unwrap();
 
         // Gestione del processo di registrazione
         let mut process_stop = self.process_stop.lock().unwrap();
@@ -108,6 +128,13 @@ impl SmartActionManager {
             if let Some(mut child) = process_stop.take() {
                 if let Err(err) = child.wait() {
                     eprintln!("Error while waiting for process termination: {}", err);
+                    self.app_handle
+                        .emit("smart_action_waiting_error", "error during waiting...")
+                        .unwrap();
+                } else {
+                    self.app_handle
+                        .emit("smart_action_waiting_stop", "stop waiting...")
+                        .unwrap();
                 }
             }
 

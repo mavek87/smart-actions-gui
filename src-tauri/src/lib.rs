@@ -2,12 +2,14 @@ mod commands;
 mod domain;
 mod logic;
 
-use tauri::{menu::{
-    AboutMetadataBuilder, CheckMenuItemBuilder, MenuBuilder, MenuItem, MenuItemBuilder,
-    SubmenuBuilder,
-}, tray::TrayIconBuilder, Manager, State};
-
-use std::sync::Mutex;
+use tauri::{
+    menu::{
+        AboutMetadataBuilder, CheckMenuItemBuilder, MenuBuilder, MenuItem, MenuItemBuilder,
+        SubmenuBuilder,
+    },
+    tray::TrayIconBuilder,
+    Manager, State,
+};
 
 use commands::{
     ui_notify_change_action::ui_notify_change_action, ui_notify_startup::ui_notify_startup,
@@ -102,10 +104,11 @@ pub fn run() {
 
             let app_state = AppState {
                 smart_action_manager: SmartActionManager::new(
+                    app.handle().clone(),
                     app_config,
                     menu_manager.clone(),
                     // TODO: bug. if ui doesnt call change select probably, it doesnt work (uses the empty smart action)
-                    // This is not used because after the UI loads it pass a new valid smart_action
+                    // this is not easy to fix because at the moment in the view the first smart action set is random... check why
                     SmartAction {
                         value: String::from("empty_smart_action_value"),
                         name: String::from("empty_smart_action_name"),
@@ -113,7 +116,6 @@ pub fn run() {
                         args: vec![],
                     },
                 ),
-                menu_manager: Mutex::new(menu_manager.clone()),
             };
 
             app.manage(app_state);

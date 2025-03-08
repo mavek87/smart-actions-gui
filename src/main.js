@@ -1,4 +1,40 @@
 const {invoke} = window.__TAURI__.core;
+const {listen} = window.__TAURI__.event
+
+function listen_smart_action_server_events() {
+    listen('smart_action_recording_start', (event) => {
+        console.log('Event received:', event.payload);
+
+        // recording start
+        button_submitFormAction.setAttribute("hidden", true);
+        button_submitFormActionWait.removeAttribute("hidden");
+        button_submitFormActionWait.textContent = event.payload;
+    });
+    listen('smart_action_waiting_start', (event) => {
+        console.log('Event received:', event.payload);
+
+        // loading start
+        button_submitFormAction.setAttribute("hidden", true);
+        button_submitFormActionWait.removeAttribute("hidden");
+        button_submitFormActionWait.textContent = event.payload;
+    });
+    listen('smart_action_waiting_stop', (event) => {
+        console.log('Event received:', event.payload);
+
+        // loading stop
+        button_submitFormAction.removeAttribute("hidden");
+        button_submitFormActionWait.setAttribute("hidden", true);
+    });
+    listen('smart_action_waiting_error', (event) => {
+        console.log('Event received:', event.payload);
+
+        // TODO: handle the error
+
+        // loading stop
+        button_submitFormAction.removeAttribute("hidden");
+        button_submitFormActionWait.setAttribute("hidden", true);
+    });
+}
 
 async function ui_notify_startup() {
     return await invoke("ui_notify_startup", {});
@@ -9,7 +45,7 @@ async function ui_notify_change_action(jsonSmartAction) {
 }
 
 async function ui_request_execute_action(jsonSmartAction) {
-    await invoke("ui_request_execute_action", {jsonSmartAction});
+    return await invoke("ui_request_execute_action", {jsonSmartAction});
 }
 
 let actions = [];
@@ -21,18 +57,22 @@ const select_action = document.getElementById("select_action");
 const input_ActionDescription = document.getElementById('input_action-description');
 const div_actionProps = document.getElementById("div_action-props");
 const button_submitFormAction = document.getElementById("button_submit-form-action");
+const button_submitFormActionWait = document.getElementById("button_submit-form-action_wait");
 
 select_action.addEventListener('change', function () {
     populateViewForAction();
     notify_change_smart_action_to_tauri();
 });
 
-button_submitFormAction.addEventListener('click', function (e) {
+button_submitFormAction.addEventListener('click', async function (e) {
     e.preventDefault();
-    ui_request_execute_action(extractSmartActionJsonFromForm());
+
+    let _result = await ui_request_execute_action(extractSmartActionJsonFromForm());
 });
 
 window.addEventListener("DOMContentLoaded", async () => {
+    listen_smart_action_server_events();
+
     const jsonActions = await ui_notify_startup();
 
     if (jsonActions) {
