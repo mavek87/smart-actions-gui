@@ -13,8 +13,11 @@ async function ui_request_execute_action(jsonAction) {
     await invoke("ui_request_execute_action", {jsonAction});
 }
 
+// This are input actions
 let actions = [];
+// This is an output action
 let currentAction;
+// Their json structure is not the same!!!
 
 const button_submitFormAction = document.getElementById("button_submit-form-action");
 const form_action = document.getElementById("form_action");
@@ -32,7 +35,6 @@ button_submitFormAction.addEventListener('click', function (e) {
     ui_request_execute_action(jsonAction);
 });
 
-// TODO: fix needed. When started action is not aligned with tray bar
 window.addEventListener("DOMContentLoaded", async () => {
     const jsonActions = await ui_notify_startup();
 
@@ -48,6 +50,7 @@ window.addEventListener("DOMContentLoaded", async () => {
             select_action.appendChild(option);
         }
 
+        // TODO: fix needed. When started action is not aligned with tray bar
         select_action.selectedIndex = 0;
         const action = actions[select_action.value]
         input_ActionDescription.value = action.description;
