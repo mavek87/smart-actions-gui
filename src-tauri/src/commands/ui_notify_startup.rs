@@ -43,7 +43,7 @@ pub fn ui_notify_startup() -> String {
     let json_actions_metadata =
         serde_json::to_string(&actions_metadata).expect("Failed to parse JSON");
 
-    println!("JSON delle azioni: {}", json_actions_metadata);
+    // println!("JSON delle azioni: {}", json_actions_metadata);
 
     json_actions_metadata
 }

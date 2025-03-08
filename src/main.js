@@ -22,9 +22,13 @@ const select_action = document.getElementById("select_action");
 const input_ActionDescription = document.getElementById('input_action-description');
 const div_actionProps = document.getElementById("div_action-props");
 
-button_submitFormAction.addEventListener('click', function () {
-    form_action.submit();
+button_submitFormAction.addEventListener('click', function (e) {
+    e.preventDefault();
+
+    currentAction = extractActionFromForm();
+
     const jsonAction = JSON.stringify(currentAction);
+
     ui_request_execute_action(jsonAction);
 });
 
@@ -60,41 +64,38 @@ window.addEventListener("DOMContentLoaded", async () => {
 
         ui_notify_change_action(actionValue, action.name)
     });
-
-    // TODO: a code refactoring is needed
-    form_action.addEventListener('submit', function (event) {
-        event.preventDefault();
-
-        // This is gathered from the form fields
-        const formData = new FormData(this);
-        const data = Object.fromEntries(formData.entries());
-
-        const selectedActionInUI = actions[select_action.value];
-        // console.log(selectedActionInUI);
-        let selectedAction = select_action.options[select_action.selectedIndex];
-        let selectedActionName = selectedAction.text;
-
-        const action = {
-            value: data.value,
-            name: selectedActionName,
-            description: data.description,
-            args: []
-        };
-
-        for (const [key, value] of Object.entries(data)) {
-            if (key !== 'value' && key !== 'description') {
-                let argument = selectedActionInUI.options[`${key}`];
-                argument = argument.split("|")[0].trim();
-                action.args.push({
-                    [`${key}`]: value,
-                    arg: argument
-                });
-            }
-        }
-
-        currentAction = action;
-    });
 });
+
+function extractActionFromForm() {
+    // This is gathered from the form fields
+    const formData = new FormData(form_action);
+    const data = Object.fromEntries(formData.entries());
+
+    const selectedActionInUI = actions[select_action.value];
+    // console.log(selectedActionInUI);
+    let selectedAction = select_action.options[select_action.selectedIndex];
+    let selectedActionName = selectedAction.text;
+
+    const action = {
+        value: data.value,
+        name: selectedActionName,
+        description: data.description,
+        args: []
+    };
+
+    for (const [key, value] of Object.entries(data)) {
+        if (key !== 'value' && key !== 'description') {
+            let argument = selectedActionInUI.options[`${key}`];
+            argument = argument.split("|")[0].trim();
+            action.args.push({
+                [`${key}`]: value,
+                arg: argument
+            });
+        }
+    }
+
+    return action;
+}
 
 function populateSettingsForAction(action) {
     div_actionProps.innerHTML = '';
