@@ -11,14 +11,14 @@ pub struct MenuManager {
 
 impl MenuManager {
     pub fn new(
-        action_name_menu_item: Arc<Mutex<MenuItem<Wry>>>,
-        start_menu_item: Arc<Mutex<MenuItem<Wry>>>,
-        stop_menu_item: Arc<Mutex<MenuItem<Wry>>>,
+        action_name_menu_item: MenuItem<Wry>,
+        start_menu_item: MenuItem<Wry>,
+        stop_menu_item: MenuItem<Wry>,
     ) -> Self {
         Self {
-            action_name_menu_item,
-            start_action_menu_item: start_menu_item,
-            stop_action_menu_item: stop_menu_item,
+            action_name_menu_item: Arc::new(Mutex::new(action_name_menu_item)),
+            start_action_menu_item: Arc::new(Mutex::new(start_menu_item)),
+            stop_action_menu_item: Arc::new(Mutex::new(stop_menu_item)),
             is_action_started: false,
         }
     }

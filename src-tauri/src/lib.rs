@@ -23,7 +23,7 @@ use commands::{
 
 use domain::app_state::AppState;
 
-use crate::domain::smart_action::{SmartAction};
+use crate::domain::smart_action::SmartAction;
 use crate::logic::smart_action_state_manager::SmartActionStateManager;
 use logic::config_manager::ConfigManager;
 use logic::menu_manager::MenuManager;
@@ -42,28 +42,16 @@ pub fn run() {
             let process_start = Arc::new(Mutex::new(None::<Child>));
             let process_stop = Arc::new(Mutex::new(None::<Child>));
 
-            let action_name_menu_item = Arc::new(Mutex::new(
-                MenuItemBuilder::new("Dictate Text")
-                    .id("action_name_menu_item")
-                    .enabled(false)
-                    .build(app)?,
-            ));
+            let action_name_menu_item = MenuItemBuilder::new("Dictate Text")
+                .id("action_name_menu_item")
+                .enabled(false)
+                .build(app)?;
 
-            let start_action_menu_item = Arc::new(Mutex::new(MenuItem::with_id(
-                app,
-                "start",
-                "Start",
-                true,
-                Some("Ctrl+N"),
-            )?));
+            let start_action_menu_item =
+                MenuItem::with_id(app, "start", "Start", true, Some("Ctrl+N"))?;
 
-            let stop_action_menu_item = Arc::new(Mutex::new(MenuItem::with_id(
-                app,
-                "stop",
-                "Stop",
-                false,
-                Some("Ctrl+E"),
-            )?));
+            let stop_action_menu_item =
+                MenuItem::with_id(app, "stop", "Stop", false, Some("Ctrl+E"))?;
 
             // TODO: use the current language if present
             //let lang_str = "unset";
@@ -105,11 +93,11 @@ pub fn run() {
                 .build(app)?;
 
             let menu = MenuBuilder::new(app)
-                .item(&*action_name_menu_item.lock().unwrap())
+                .item(&action_name_menu_item)
                 .separator()
                 .items(&[
-                    &*start_action_menu_item.lock().unwrap(),
-                    &*stop_action_menu_item.lock().unwrap(),
+                    &start_action_menu_item,
+                    &stop_action_menu_item,
                 ])
                 .separator()
                 .item(&language_submenu)
@@ -120,21 +108,21 @@ pub fn run() {
                 .build()?;
 
             let menu_manager = MenuManager::new(
-                Arc::clone(&action_name_menu_item),
-                Arc::clone(&start_action_menu_item),
-                Arc::clone(&stop_action_menu_item),
+                action_name_menu_item,
+                start_action_menu_item,
+                stop_action_menu_item,
             );
 
-            let current_smart_action: SmartAction = SmartAction {
-                value: String::from("dictate_text"),
-                name: String::from("Dictate text"),
-                description: String::from("TODO"),
-                // TODO: add default args
-                args: vec![],
-            };
-
             let app_state = AppState {
-                smart_action_state_manager: SmartActionStateManager::new(current_smart_action),
+                smart_action_state_manager: SmartActionStateManager::new(
+                    // This is not used because after the UI loads it pass a new valid smart_action
+                    SmartAction {
+                        value: String::from("empty_smart_action_value"),
+                        name: String::from("empty_smart_action_name"),
+                        description: String::from("empty_smart_action_description"),
+                        args: vec![],
+                    },
+                ),
                 menu_manager: Mutex::new(menu_manager.clone()),
             };
 
@@ -149,7 +137,6 @@ pub fn run() {
                         let app_state: State<AppState> = app.state();
 
                         app_state.menu_manager.lock().unwrap().set_action_started();
-                        println!("1");
 
                         let smart_action_state = &app_state
                             .smart_action_state_manager
@@ -158,10 +145,8 @@ pub fn run() {
                             .unwrap();
 
                         let current_smart_action_value = smart_action_state.value.lock().unwrap();
-                        println!("2");
 
                         let mut process_start = process_start.lock().unwrap();
-                        println!("3");
 
                         if process_start.is_none() {
                             let child = Command::new("bash")

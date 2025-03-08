@@ -54,7 +54,6 @@ window.addEventListener("DOMContentLoaded", async () => {
             select_action.appendChild(option);
         }
 
-        // TODO: fix needed. When started action is not aligned with tray bar
         select_action.selectedIndex = 0;
         populateViewForAction();
     }
