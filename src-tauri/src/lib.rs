@@ -21,28 +21,19 @@ use commands::{
     ui_request_execute_action::ui_request_execute_action,
 };
 
-use domain::{app_state::AppState};
+use domain::app_state::AppState;
 
+use crate::domain::smart_action::SmartAction;
 use logic::config_manager::ConfigManager;
-use logic::menu_action_state_manager::MenuManager;
-
-// use tauri::GlobalShortcutManager;
-//
-// // Registriamo la scorciatoia CTRL + U
-// app_handle.global_shortcut_manager().register("CTRL + U", move || {
-// // Apre una finestra di dialogo con un messaggio
-// tauri::api::dialog::message(
-// Some(&app_handle),
-// "Scorciatoia premuta",
-// "Hai premuto CTRL + U!",
-// );
-// });
+use logic::menu_manager::MenuManager;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     let config_manager: ConfigManager = ConfigManager::new();
 
-    let config = config_manager.read_config("assets/config.json".to_string()).unwrap();
+    let config = config_manager
+        .read_config("assets/config.json".to_string())
+        .unwrap();
     println!("config: {:?}", config);
 
     tauri::Builder::default()
@@ -127,35 +118,42 @@ pub fn run() {
                 .item(&quit_item)
                 .build()?;
 
-            let menu_action_state_manager = MenuManager::new(
+            let menu_manager = MenuManager::new(
                 Arc::clone(&action_name_menu_item),
                 Arc::clone(&start_action_menu_item),
                 Arc::clone(&stop_action_menu_item),
             );
 
+            let current_smart_action: SmartAction = SmartAction {
+                value: String::from("dictate_text"),
+                name: String::from("Dictate text"),
+                description: String::from("TODO"),
+                // TODO: add default args
+                args: vec![],
+            };
+
             let app_state = AppState {
-                current_action_value: Mutex::new("dictate_text".to_string()),
-                // menu_handle: Mutex::new(menu.clone()),
-                menu_manager: Mutex::new(menu_action_state_manager.clone()),
+                current_smart_action: Mutex::new(current_smart_action),
+                menu_manager: Mutex::new(menu_manager.clone()),
             };
 
             app.manage(app_state);
-            app.on_menu_event(move |_app, event| match event.id().0.as_str() {
-                "unset" | "en" | "it" => {
-                    lang_sub_item_unset
-                        .set_checked(event.id().0.as_str() == "unset")
-                        .expect("Change check error");
-                    lang_sub_item_en
-                        .set_checked(event.id().0.as_str() == "en")
-                        .expect("Change check error");
-                    lang_sub_item_it
-                        .set_checked(event.id().0.as_str() == "it")
-                        .expect("Change check error");
-                }
-                _ => {
-                    println!("unexpected menu event");
-                }
-            });
+            // app.on_menu_event(move |_app, event| match event.id().0.as_str() {
+            //     "unset" | "en" | "it" => {
+            //         lang_sub_item_unset
+            //             .set_checked(event.id().0.as_str() == "unset")
+            //             .expect("Change check error");
+            //         lang_sub_item_en
+            //             .set_checked(event.id().0.as_str() == "en")
+            //             .expect("Change check error");
+            //         lang_sub_item_it
+            //             .set_checked(event.id().0.as_str() == "it")
+            //             .expect("Change check error");
+            //     }
+            //     a => {
+            //         println!("unexpected menu event {}", a);
+            //     }
+            // });
 
             TrayIconBuilder::new()
                 .icon(app.default_window_icon().unwrap().clone())
@@ -167,20 +165,42 @@ pub fn run() {
                         let app_state: State<AppState> = app.state();
 
                         app_state.menu_manager.lock().unwrap().set_action_started();
+                        println!("1");
 
-                        let current_action_name = app_state.current_action_value.lock().unwrap();
+                        let current_smart_action_value =
+                            &app_state.current_smart_action.lock().unwrap().value;
+                        let current_smart_action_args =
+                            &app_state.current_smart_action.lock().unwrap().args;
+
+                        println!("2");
+
                         let mut process_start = process_start.lock().unwrap();
+                        println!("3");
 
                         if process_start.is_none() {
                             let child = Command::new("bash")
                                 .arg(format!("{}/smart-actions.sh", config.faster_whisper_folder))
-                                .arg(format!("{}", current_action_name))
+                                .arg(format!("{}", current_smart_action_value))
                                 .spawn()
                                 .expect(
                                     "Failed to start 'dictate_text' action from smart-actions.sh",
                                 );
+
                             *process_start = Some(child);
                             println!("Recording started!");
+
+                            // for arg in current_smart_action_args.iter() {
+                            //     for arg_key in arg.keys() {
+                            //         if let Some(value) = arg.get(arg_key) {
+                            //             println!("Chiave: {}, Valore: {}", arg_key, value);
+                            //             if arg_key == "arg" {
+                            //             } else {
+                            //             }
+                            //         }
+                            //         // child.arg(format!("--{}", arg_key.key));
+                            //         // child.arg(arg_key.value.clone());
+                            //     }
+                            // }
                         } else {
                             println!("Recording is already running.");
                         }
@@ -224,6 +244,20 @@ pub fn run() {
                         println!("quit menu item was clicked");
                         app.exit(0);
                     }
+                    "unset" | "en" | "it" => {
+                        lang_sub_item_unset
+                            .set_checked(event.id().0.as_str() == "unset")
+                            .expect("Change check error");
+                        lang_sub_item_en
+                            .set_checked(event.id().0.as_str() == "en")
+                            .expect("Change check error");
+                        lang_sub_item_it
+                            .set_checked(event.id().0.as_str() == "it")
+                            .expect("Change check error");
+                    }
+                    // a => {
+                    //     println!("unexpected menu event {}", a);
+                    // }
                     _ => {
                         println!("menu item {:?} not handled", event.id);
                     }
@@ -242,3 +276,15 @@ pub fn run() {
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
+
+// use tauri::GlobalShortcutManager;
+//
+// // Registriamo la scorciatoia CTRL + U
+// app_handle.global_shortcut_manager().register("CTRL + U", move || {
+// // Apre una finestra di dialogo con un messaggio
+// tauri::api::dialog::message(
+// Some(&app_handle),
+// "Scorciatoia premuta",
+// "Hai premuto CTRL + U!",
+// );
+// });
