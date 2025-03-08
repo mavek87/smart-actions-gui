@@ -28,7 +28,7 @@ pub fn run() {
     let app_config = config_manager
         .read_config("assets/config.json".to_string())
         .unwrap();
-    println!("config: {:?}", app_config);
+    println!("app_config: {:?}", app_config);
 
     tauri::Builder::default()
         .setup(|app| {
