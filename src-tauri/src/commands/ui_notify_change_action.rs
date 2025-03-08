@@ -8,7 +8,7 @@ pub fn ui_notify_change_action(
     state: State<AppState>,
     _app: AppHandle,
 ) -> String {
-    //println!("json_smart_action: {}", json_smart_action);
+    println!("ui_notify_change_action:- json_smart_action: {}", json_smart_action);
 
     let smart_action: SmartAction =
         serde_json::from_str(&json_smart_action).expect("Failed to parse JSON Smart Action");

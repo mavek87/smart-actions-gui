@@ -95,10 +95,7 @@ pub fn run() {
             let menu = MenuBuilder::new(app)
                 .item(&action_name_menu_item)
                 .separator()
-                .items(&[
-                    &start_action_menu_item,
-                    &stop_action_menu_item,
-                ])
+                .items(&[&start_action_menu_item, &stop_action_menu_item])
                 .separator()
                 .item(&language_submenu)
                 .separator()
@@ -115,6 +112,7 @@ pub fn run() {
 
             let app_state = AppState {
                 smart_action_state_manager: SmartActionStateManager::new(
+                    // TODO: bug. if ui doesnt call change select probably, it doesnt work (uses the empty smart action)
                     // This is not used because after the UI loads it pass a new valid smart_action
                     SmartAction {
                         value: String::from("empty_smart_action_value"),
@@ -145,33 +143,50 @@ pub fn run() {
                             .unwrap();
 
                         let current_smart_action_value = smart_action_state.value.lock().unwrap();
+                        let current_smart_action_args = smart_action_state.args.lock().unwrap();
 
                         let mut process_start = process_start.lock().unwrap();
 
                         if process_start.is_none() {
-                            let child = Command::new("bash")
+                            let mut command_smart_action = Command::new("bash");
+
+                            command_smart_action
                                 .arg(format!("{}/smart-actions.sh", config.faster_whisper_folder))
-                                .arg(format!("{}", current_smart_action_value))
-                                .spawn()
-                                .expect(
-                                    "Failed to start 'dictate_text' action from smart-actions.sh",
-                                );
+                                .arg(format!("{}", current_smart_action_value));
 
-                            *process_start = Some(child);
+                            // TODO: a refactoring is necessary
+                            for arg in current_smart_action_args.iter() {
+                                let mut arg_param: String = String::from("");
+                                let mut arg_value: String = String::from("");
+
+                                for arg_key in arg.keys() {
+                                    if let Some(value) = arg.get(arg_key) {
+                                        if arg_key == "arg" {
+                                            // -l
+                                            arg_param = value.to_string();
+                                        } else {
+                                            // it
+                                            arg_value = value.to_string();
+                                        }
+                                    }
+                                }
+
+                                let command_arg = format!("{} {}", arg_param, arg_value);
+                                println!("Argomento: {}", command_arg);
+
+                                // TODO: what to do if value is empty?
+                                if !arg_value.is_empty() {
+                                    command_smart_action.arg(arg_param);
+                                    command_smart_action.arg(arg_value);
+                                }
+                            }
+
+                            let process_command_smart_action = command_smart_action.spawn().expect(
+                                "Failed to start 'dictate_text' action from smart-actions.sh",
+                            );
+
+                            *process_start = Some(process_command_smart_action);
                             println!("Recording started!");
-
-                            // for arg in current_smart_action_args.iter() {
-                            //     for arg_key in arg.keys() {
-                            //         if let Some(value) = arg.get(arg_key) {
-                            //             println!("Chiave: {}, Valore: {}", arg_key, value);
-                            //             if arg_key == "arg" {
-                            //             } else {
-                            //             }
-                            //         }
-                            //         // child.arg(format!("--{}", arg_key.key));
-                            //         // child.arg(arg_key.value.clone());
-                            //     }
-                            // }
                         } else {
                             println!("Recording is already running.");
                         }
