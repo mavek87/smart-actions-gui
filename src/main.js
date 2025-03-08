@@ -13,11 +13,8 @@ async function ui_request_execute_action(jsonAction) {
     await invoke("ui_request_execute_action", {jsonAction});
 }
 
-// This are input actions
 let actions = [];
-// This is an output action
-let currentAction;
-// Their json structure is not the same!!!
+let currentSmartAction;
 
 const button_submitFormAction = document.getElementById("button_submit-form-action");
 const form_action = document.getElementById("form_action");
@@ -28,11 +25,11 @@ const div_actionProps = document.getElementById("div_action-props");
 button_submitFormAction.addEventListener('click', function (e) {
     e.preventDefault();
 
-    currentAction = extractCurrentActionFromForm();
+    currentSmartAction = extractSmartActionFromForm();
 
-    const jsonAction = JSON.stringify(currentAction);
+    const jsonSmartAction = JSON.stringify(currentSmartAction);
 
-    ui_request_execute_action(jsonAction);
+    ui_request_execute_action(jsonSmartAction);
 });
 
 window.addEventListener("DOMContentLoaded", async () => {
@@ -69,35 +66,31 @@ window.addEventListener("DOMContentLoaded", async () => {
     });
 });
 
-function extractCurrentActionFromForm() {
+function extractSmartActionFromForm() {
     // This is gathered from the form fields
     const formData = new FormData(form_action);
     const data = Object.fromEntries(formData.entries());
 
-    const selectedActionInUI = actions[select_action.value];
-    // console.log(selectedActionInUI);
-    let selectedAction = select_action.options[select_action.selectedIndex];
-    let selectedActionName = selectedAction.text;
+    const selectedActionInUI = actions[data.value];
 
-    const action = {
+    const smartAction = {
         value: data.value,
-        name: selectedActionName,
-        description: data.description,
+        name: selectedActionInUI.name,
         args: []
     };
 
     for (const [key, value] of Object.entries(data)) {
-        if (key !== 'value' && key !== 'description') {
+        if (key !== 'value') {
             let argument = selectedActionInUI.options[`${key}`];
             argument = argument.split("|")[0].trim();
-            action.args.push({
+            smartAction.args.push({
                 [`${key}`]: value,
                 arg: argument
             });
         }
     }
 
-    return action;
+    return smartAction;
 }
 
 function populateSettingsForAction(action) {
