@@ -1,7 +1,6 @@
-use std::sync::{Arc, Mutex};
 use crate::domain::app_state::AppState;
-use tauri::{command, AppHandle, State};
 use crate::domain::smart_action::SmartAction;
+use tauri::{command, AppHandle, State};
 
 #[command]
 pub fn ui_notify_change_action(
@@ -20,10 +19,9 @@ pub fn ui_notify_change_action(
         .unwrap()
         .set_action_name_text(format!("{}", smart_action.name));
 
-    let current_action_value = &mut state.current_smart_action.lock().unwrap().value;
+    state
+        .smart_action_state_manager
+        .change_smart_action(smart_action);
 
-    *current_action_value = Arc::new(Mutex::new(smart_action.value));
-
-    // TODO: what is the purpose of returning??? probably useless
-    current_action_value.clone().lock().unwrap().to_string()
+    "OK".to_string()
 }

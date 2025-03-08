@@ -23,7 +23,8 @@ use commands::{
 
 use domain::app_state::AppState;
 
-use crate::domain::smart_action::{SmartAction, SmartActionState};
+use crate::domain::smart_action::{SmartAction};
+use crate::logic::smart_action_state_manager::SmartActionStateManager;
 use logic::config_manager::ConfigManager;
 use logic::menu_manager::MenuManager;
 
@@ -133,32 +134,15 @@ pub fn run() {
             };
 
             let app_state = AppState {
-                current_smart_action: Mutex::new(SmartActionState::new(current_smart_action)),
+                smart_action_state_manager: SmartActionStateManager::new(current_smart_action),
                 menu_manager: Mutex::new(menu_manager.clone()),
             };
 
             app.manage(app_state);
-            // app.on_menu_event(move |_app, event| match event.id().0.as_str() {
-            //     "unset" | "en" | "it" => {
-            //         lang_sub_item_unset
-            //             .set_checked(event.id().0.as_str() == "unset")
-            //             .expect("Change check error");
-            //         lang_sub_item_en
-            //             .set_checked(event.id().0.as_str() == "en")
-            //             .expect("Change check error");
-            //         lang_sub_item_it
-            //             .set_checked(event.id().0.as_str() == "it")
-            //             .expect("Change check error");
-            //     }
-            //     a => {
-            //         println!("unexpected menu event {}", a);
-            //     }
-            // });
 
             TrayIconBuilder::new()
                 .icon(app.default_window_icon().unwrap().clone())
                 .menu(&menu)
-                //TODO: unify the two on_menu_event
                 .on_menu_event(move |app, event| match event.id.as_ref() {
                     "start" => {
                         println!("start record was clicked");
@@ -167,11 +151,13 @@ pub fn run() {
                         app_state.menu_manager.lock().unwrap().set_action_started();
                         println!("1");
 
-                        let x = &app_state.current_smart_action.lock().unwrap();
+                        let smart_action_state = &app_state
+                            .smart_action_state_manager
+                            .smart_action_state
+                            .lock()
+                            .unwrap();
 
-                        let current_smart_action_value = x.value.lock().unwrap();
-                        // let current_smart_action_args = x.args.lock().unwrap();
-
+                        let current_smart_action_value = smart_action_state.value.lock().unwrap();
                         println!("2");
 
                         let mut process_start = process_start.lock().unwrap();
@@ -255,9 +241,6 @@ pub fn run() {
                             .set_checked(event.id().0.as_str() == "it")
                             .expect("Change check error");
                     }
-                    // a => {
-                    //     println!("unexpected menu event {}", a);
-                    // }
                     _ => {
                         println!("menu item {:?} not handled", event.id);
                     }

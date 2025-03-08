@@ -1,8 +1,8 @@
-use crate::domain::smart_action::SmartActionState;
 use crate::logic::menu_manager::MenuManager;
 use std::sync::Mutex;
+use crate::logic::smart_action_state_manager::SmartActionStateManager;
 
 pub struct AppState {
-    pub current_smart_action: Mutex<SmartActionState>,
+    pub smart_action_state_manager: SmartActionStateManager,
     pub menu_manager: Mutex<MenuManager>,
 }
