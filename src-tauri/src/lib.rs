@@ -11,10 +11,7 @@ use tauri::{
     Manager, State,
 };
 
-use std::{
-    process::{Child, Command},
-    sync::{Arc, Mutex},
-};
+use std::sync::Mutex;
 
 use commands::{
     ui_notify_change_action::ui_notify_change_action, ui_notify_startup::ui_notify_startup,
@@ -24,7 +21,7 @@ use commands::{
 use domain::app_state::AppState;
 
 use crate::domain::smart_action::SmartAction;
-use crate::logic::smart_action_state_manager::SmartActionStateManager;
+use crate::logic::smart_action_manager::SmartActionManager;
 use logic::config_manager::ConfigManager;
 use logic::menu_manager::MenuManager;
 
@@ -32,16 +29,13 @@ use logic::menu_manager::MenuManager;
 pub fn run() {
     let config_manager: ConfigManager = ConfigManager::new();
 
-    let config = config_manager
+    let app_config = config_manager
         .read_config("assets/config.json".to_string())
         .unwrap();
-    println!("config: {:?}", config);
+    println!("config: {:?}", app_config);
 
     tauri::Builder::default()
         .setup(|app| {
-            let process_start = Arc::new(Mutex::new(None::<Child>));
-            let process_stop = Arc::new(Mutex::new(None::<Child>));
-
             let action_name_menu_item = MenuItemBuilder::new("Dictate Text")
                 .id("action_name_menu_item")
                 .enabled(false)
@@ -111,7 +105,9 @@ pub fn run() {
             );
 
             let app_state = AppState {
-                smart_action_state_manager: SmartActionStateManager::new(
+                smart_action_manager: SmartActionManager::new(
+                    app_config,
+                    menu_manager.clone(),
                     // TODO: bug. if ui doesnt call change select probably, it doesnt work (uses the empty smart action)
                     // This is not used because after the UI loads it pass a new valid smart_action
                     SmartAction {
@@ -133,98 +129,12 @@ pub fn run() {
                     "start" => {
                         println!("start record was clicked");
                         let app_state: State<AppState> = app.state();
-
-                        app_state.menu_manager.lock().unwrap().set_action_started();
-
-                        let smart_action_state = &app_state
-                            .smart_action_state_manager
-                            .smart_action_state
-                            .lock()
-                            .unwrap();
-
-                        let current_smart_action_value = smart_action_state.value.lock().unwrap();
-                        let current_smart_action_args = smart_action_state.args.lock().unwrap();
-
-                        let mut process_start = process_start.lock().unwrap();
-
-                        if process_start.is_none() {
-                            let mut command_smart_action = Command::new("bash");
-
-                            command_smart_action
-                                .arg(format!("{}/smart-actions.sh", config.faster_whisper_folder))
-                                .arg(format!("{}", current_smart_action_value));
-
-                            // TODO: a refactoring is necessary
-                            for arg in current_smart_action_args.iter() {
-                                let mut arg_param: String = String::from("");
-                                let mut arg_value: String = String::from("");
-
-                                for arg_key in arg.keys() {
-                                    if let Some(value) = arg.get(arg_key) {
-                                        if arg_key == "arg" {
-                                            // -l
-                                            arg_param = value.to_string();
-                                        } else {
-                                            // it
-                                            arg_value = value.to_string();
-                                        }
-                                    }
-                                }
-
-                                let command_arg = format!("{} {}", arg_param, arg_value);
-                                println!("Argomento: {}", command_arg);
-
-                                // TODO: what to do if value is empty?
-                                if !arg_value.is_empty() {
-                                    command_smart_action.arg(arg_param);
-                                    command_smart_action.arg(arg_value);
-                                }
-                            }
-
-                            let process_command_smart_action = command_smart_action.spawn().expect(
-                                "Failed to start 'dictate_text' action from smart-actions.sh",
-                            );
-
-                            *process_start = Some(process_command_smart_action);
-                            println!("Recording started!");
-                        } else {
-                            println!("Recording is already running.");
-                        }
+                        app_state.smart_action_manager.start_current_smart_action();
                     }
                     "stop" => {
                         println!("stop record was clicked");
                         let app_state: State<AppState> = app.state();
-
-                        app_state.menu_manager.lock().unwrap().set_action_stopped();
-
-                        // Gestione del processo di registrazione
-                        let mut process_stop = process_stop.lock().unwrap();
-                        if process_stop.is_none() {
-                            let child = Command::new("bash")
-                                .arg(format!("{}/smart-actions.sh", config.faster_whisper_folder))
-                                .arg("end")
-                                .spawn()
-                                .expect("Failed to start 'end' action from smart-actions.sh");
-                            *process_stop = Some(child);
-
-                            // Aspettiamo che il processo STOP termini
-                            if let Some(mut child) = process_stop.take() {
-                                if let Err(err) = child.wait() {
-                                    eprintln!(
-                                        "Error while waiting for process termination: {}",
-                                        err
-                                    );
-                                }
-                            }
-
-                            let mut process_start = process_start.lock().unwrap();
-                            *process_start = None;
-                            *process_stop = None;
-
-                            println!("Recording stop!");
-                        } else {
-                            println!("Recording already stopping.");
-                        }
+                        app_state.smart_action_manager.stop_current_smart_action();
                     }
                     "quit" => {
                         println!("quit menu item was clicked");

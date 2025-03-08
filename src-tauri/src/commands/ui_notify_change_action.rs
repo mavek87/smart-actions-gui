@@ -20,8 +20,8 @@ pub fn ui_notify_change_action(
         .set_action_name_text(format!("{}", smart_action.name));
 
     state
-        .smart_action_state_manager
-        .change_smart_action(smart_action);
+        .smart_action_manager
+        .change_current_smart_action(smart_action);
 
     "OK".to_string()
 }
