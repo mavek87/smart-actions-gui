@@ -12,7 +12,6 @@ use tauri::{
 };
 
 use std::{
-    fs::File,
     io::Read,
     process::{Child, Command},
     sync::{Arc, Mutex},
@@ -23,8 +22,9 @@ use commands::{
     ui_request_execute_action::ui_request_execute_action,
 };
 
-use domain::{app_config::AppConfig, app_state::AppState};
+use domain::{app_state::AppState};
 
+use logic::config_manager::ConfigManager;
 use logic::menu_action_state_manager::MenuManager;
 
 // use tauri::GlobalShortcutManager;
@@ -41,25 +41,10 @@ use logic::menu_action_state_manager::MenuManager;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
-    // TODO: refactor extract method
+    let config_manager: ConfigManager = ConfigManager::new();
 
-    // Percorso del file JSON
-    let file_config_path = "assets/config.json";
-
-    // Apri il file
-    let mut file_config = File::open(file_config_path).expect("Failed to open file");
-
-    // Leggi il contenuto del file in una stringa
-    let mut content = String::new();
-    file_config
-        .read_to_string(&mut content)
-        .expect("Failed to read file");
-
-    // Parse del JSON nella struct `Config`
-    let config: AppConfig = serde_json::from_str(&content).expect("Failed to parse JSON");
-
-    // println!("config: {:?}", config);
-    /////////////////////////
+    let config = config_manager.read_config("assets/config.json".to_string()).unwrap();
+    println!("config: {:?}", config);
 
     tauri::Builder::default()
         .setup(|app| {
@@ -182,11 +167,7 @@ pub fn run() {
                         println!("start record was clicked");
                         let app_state: State<AppState> = app.state();
 
-                        app_state
-                            .menu_manager
-                            .lock()
-                            .unwrap()
-                            .set_action_started();
+                        app_state.menu_manager.lock().unwrap().set_action_started();
 
                         let current_action_name = app_state.current_action_value.lock().unwrap();
                         let mut process_start = process_start.lock().unwrap();
@@ -209,11 +190,7 @@ pub fn run() {
                         println!("stop record was clicked");
                         let app_state: State<AppState> = app.state();
 
-                        app_state
-                            .menu_manager
-                            .lock()
-                            .unwrap()
-                            .set_action_stopped();
+                        app_state.menu_manager.lock().unwrap().set_action_stopped();
 
                         // Gestione del processo di registrazione
                         let mut process_stop = process_stop.lock().unwrap();
