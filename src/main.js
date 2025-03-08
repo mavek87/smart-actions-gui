@@ -1,16 +1,15 @@
 const {invoke} = window.__TAURI__.core;
 
-async function ui_notify_change_action(selectedActionValue, selectedActionName) {
-    await invoke("ui_notify_change_action", {value: selectedActionValue, name: selectedActionName});
-    //alert(actionName);
-}
-
 async function ui_notify_startup() {
     return await invoke("ui_notify_startup", {});
 }
 
-async function ui_request_execute_action(jsonAction) {
-    await invoke("ui_request_execute_action", {jsonAction});
+async function ui_notify_change_action(jsonSmartAction) {
+    await invoke("ui_notify_change_action", {jsonSmartAction});
+}
+
+async function ui_request_execute_action(jsonSmartAction) {
+    await invoke("ui_request_execute_action", {jsonSmartAction});
 }
 
 let actions = [];
@@ -23,13 +22,11 @@ const div_actionProps = document.getElementById("div_action-props");
 const button_submitFormAction = document.getElementById("button_submit-form-action");
 
 select_action.addEventListener('change', function () {
-    const actionValue = select_action.value;
-    const action = actions[actionValue]
-    input_ActionDescription.value = action.description;
+    populateViewForAction();
 
-    populateSettingsForAction(action);
+    currentSmartAction = extractSmartActionFromForm();
 
-    ui_notify_change_action(actionValue, action.name)
+    ui_notify_change_action(JSON.stringify(currentSmartAction))
 });
 
 button_submitFormAction.addEventListener('click', function (e) {
@@ -59,10 +56,7 @@ window.addEventListener("DOMContentLoaded", async () => {
 
         // TODO: fix needed. When started action is not aligned with tray bar
         select_action.selectedIndex = 0;
-        const action = actions[select_action.value]
-        input_ActionDescription.value = action.description;
-
-        populateSettingsForAction(action);
+        populateViewForAction();
     }
 });
 
@@ -75,12 +69,13 @@ function extractSmartActionFromForm() {
 
     const smartAction = {
         value: data.value,
+        description: selectedActionInUI.description,
         name: selectedActionInUI.name,
         args: []
     };
 
-    for (const [key, value] of Object.entries(formData.entries())) {
-        if (key !== 'value') {
+    for (const [key, value] of Object.entries(data)) {
+        if (key !== 'value' && key !== 'description') {
             let argument = selectedActionInUI.options[`${key}`];
             argument = argument.split("|")[0].trim();
             smartAction.args.push({
@@ -93,7 +88,14 @@ function extractSmartActionFromForm() {
     return smartAction;
 }
 
-function populateSettingsForAction(action) {
+function populateViewForAction() {
+    const actionValue = select_action.value;
+    const action = actions[actionValue]
+    input_ActionDescription.value = action.description;
+    populateViewSettingsForAction(action);
+}
+
+function populateViewSettingsForAction(action) {
     div_actionProps.innerHTML = '';
 
     const maxElementsPerRow = 3;
