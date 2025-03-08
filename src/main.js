@@ -16,11 +16,21 @@ async function ui_request_execute_action(jsonAction) {
 let actions = [];
 let currentSmartAction;
 
-const button_submitFormAction = document.getElementById("button_submit-form-action");
 const form_action = document.getElementById("form_action");
 const select_action = document.getElementById("select_action");
 const input_ActionDescription = document.getElementById('input_action-description');
 const div_actionProps = document.getElementById("div_action-props");
+const button_submitFormAction = document.getElementById("button_submit-form-action");
+
+select_action.addEventListener('change', function () {
+    const actionValue = select_action.value;
+    const action = actions[actionValue]
+    input_ActionDescription.value = action.description;
+
+    populateSettingsForAction(action);
+
+    ui_notify_change_action(actionValue, action.name)
+});
 
 button_submitFormAction.addEventListener('click', function (e) {
     e.preventDefault();
@@ -54,16 +64,6 @@ window.addEventListener("DOMContentLoaded", async () => {
 
         populateSettingsForAction(action);
     }
-
-    select_action.addEventListener('change', function () {
-        const actionValue = select_action.value;
-        const action = actions[actionValue]
-        input_ActionDescription.value = action.description;
-
-        populateSettingsForAction(action);
-
-        ui_notify_change_action(actionValue, action.name)
-    });
 });
 
 function extractSmartActionFromForm() {
@@ -79,7 +79,7 @@ function extractSmartActionFromForm() {
         args: []
     };
 
-    for (const [key, value] of Object.entries(data)) {
+    for (const [key, value] of Object.entries(formData.entries())) {
         if (key !== 'value') {
             let argument = selectedActionInUI.options[`${key}`];
             argument = argument.split("|")[0].trim();
