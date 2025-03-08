@@ -2,14 +2,10 @@ mod commands;
 mod domain;
 mod logic;
 
-use tauri::{
-    menu::{
-        AboutMetadataBuilder, CheckMenuItemBuilder, MenuBuilder, MenuItem, MenuItemBuilder,
-        SubmenuBuilder,
-    },
-    tray::TrayIconBuilder,
-    Manager, State,
-};
+use tauri::{menu::{
+    AboutMetadataBuilder, CheckMenuItemBuilder, MenuBuilder, MenuItem, MenuItemBuilder,
+    SubmenuBuilder,
+}, tray::TrayIconBuilder, Manager, State};
 
 use std::sync::Mutex;
 
