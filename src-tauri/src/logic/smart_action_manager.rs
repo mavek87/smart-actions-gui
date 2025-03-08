@@ -53,17 +53,15 @@ impl SmartActionManager {
 
             // TODO: a refactoring is necessary
             for arg in current_smart_action_args.iter() {
-                let mut arg_param: String = String::from("");
-                let mut arg_value: String = String::from("");
+                let mut arg_param: String = String::new();
+                let mut arg_value: String = String::new();
 
                 for arg_key in arg.keys() {
                     if let Some(value) = arg.get(arg_key) {
                         if arg_key == "arg" {
-                            // -l
-                            arg_param = value.to_string();
+                            arg_param = value.to_string(); // -l
                         } else {
-                            // it
-                            arg_value = value.to_string();
+                            arg_value = value.to_string(); // it
                         }
                     }
                 }
