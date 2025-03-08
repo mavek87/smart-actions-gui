@@ -25,7 +25,7 @@ const div_actionProps = document.getElementById("div_action-props");
 button_submitFormAction.addEventListener('click', function (e) {
     e.preventDefault();
 
-    currentAction = extractActionFromForm();
+    currentAction = extractCurrentActionFromForm();
 
     const jsonAction = JSON.stringify(currentAction);
 
@@ -34,12 +34,12 @@ button_submitFormAction.addEventListener('click', function (e) {
 
 // TODO: fix needed. When started action is not aligned with tray bar
 window.addEventListener("DOMContentLoaded", async () => {
-    const jsonOutput = await ui_notify_startup();
+    const jsonActions = await ui_notify_startup();
 
-    if (jsonOutput) {
-        const resultObj = JSON.parse(jsonOutput);
+    if (jsonActions) {
+        const actionsWrapperObj = JSON.parse(jsonActions);
 
-        actions = resultObj?.actions || [];
+        actions = actionsWrapperObj?.actions || [];
 
         for (const [action_key, action_props] of Object.entries(actions)) {
             const option = document.createElement('option');
@@ -66,7 +66,7 @@ window.addEventListener("DOMContentLoaded", async () => {
     });
 });
 
-function extractActionFromForm() {
+function extractCurrentActionFromForm() {
     // This is gathered from the form fields
     const formData = new FormData(form_action);
     const data = Object.fromEntries(formData.entries());
