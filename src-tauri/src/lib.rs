@@ -2,6 +2,7 @@ mod commands;
 mod domain;
 mod logic;
 
+use std::sync::Mutex;
 use tauri::{
     menu::{
         AboutMetadataBuilder, CheckMenuItemBuilder, MenuBuilder, MenuItem, MenuItemBuilder,
@@ -116,6 +117,7 @@ pub fn run() {
                         args: vec![],
                     },
                 ),
+                menu_manager: Mutex::new(menu_manager.clone()),
             };
 
             app.manage(app_state);

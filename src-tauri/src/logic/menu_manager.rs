@@ -1,7 +1,7 @@
 use std::sync::{Arc, Mutex};
 use tauri::menu::MenuItem;
 use tauri::Wry;
-
+#[derive(Clone)]
 pub struct MenuManager {
     action_name_menu_item: Arc<Mutex<MenuItem<Wry>>>,
     start_action_menu_item: Arc<Mutex<MenuItem<Wry>>>,
@@ -52,16 +52,5 @@ impl MenuManager {
             .unwrap()
             .set_enabled(self.is_action_started)
             .unwrap(); // Abilita Start
-    }
-}
-
-impl Clone for MenuManager {
-    fn clone(&self) -> Self {
-        MenuManager {
-            action_name_menu_item: self.action_name_menu_item.clone(),
-            start_action_menu_item: self.start_action_menu_item.clone(),
-            stop_action_menu_item: self.stop_action_menu_item.clone(),
-            is_action_started: self.is_action_started.clone(),
-        }
     }
 }

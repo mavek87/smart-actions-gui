@@ -79,7 +79,7 @@ button_submitFormAction.addEventListener('click', async function (e) {
     let _result = await ui_request_execute_action(extractSmartActionJsonFromForm());
 });
 
-button_submitFormAction.addEventListener('click', async function (e) {
+button_submitFormActionStopRecording.addEventListener('click', async function (e) {
     e.preventDefault();
 
     let _result = await ui_request_stop_action();

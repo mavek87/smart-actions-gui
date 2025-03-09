@@ -16,6 +16,12 @@ pub fn ui_request_execute_action(
     //     smart_action
     // );
 
+    app_state
+        .menu_manager
+        .lock()
+        .unwrap()
+        .set_action_started();
+
     let smart_action_manager = &app_state.smart_action_manager;
     smart_action_manager.change_current_smart_action(smart_action);
     smart_action_manager.start_current_smart_action();
