@@ -13,7 +13,7 @@ use tauri::{
 
 use commands::{
     ui_notify_change_action::ui_notify_change_action, ui_notify_startup::ui_notify_startup,
-    ui_request_execute_action::ui_request_execute_action,
+    ui_request_execute_action::ui_request_execute_action, ui_request_stop_action::ui_request_stop_action,
 };
 
 use domain::app_state::AppState;
@@ -162,7 +162,8 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             ui_notify_change_action,
             ui_notify_startup,
-            ui_request_execute_action
+            ui_request_execute_action,
+            ui_request_stop_action,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

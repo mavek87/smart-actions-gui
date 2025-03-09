@@ -1,40 +1,5 @@
 const {invoke} = window.__TAURI__.core;
-const {listen} = window.__TAURI__.event
-
-function listen_smart_action_server_events() {
-    listen('smart_action_recording_start', (event) => {
-        console.log('Event received:', event.payload);
-
-        // recording start
-        button_submitFormAction.setAttribute("hidden", true);
-        button_submitFormActionWait.removeAttribute("hidden");
-        button_submitFormActionWait.textContent = event.payload;
-    });
-    listen('smart_action_waiting_start', (event) => {
-        console.log('Event received:', event.payload);
-
-        // loading start
-        button_submitFormAction.setAttribute("hidden", true);
-        button_submitFormActionWait.removeAttribute("hidden");
-        button_submitFormActionWait.textContent = event.payload;
-    });
-    listen('smart_action_waiting_stop', (event) => {
-        console.log('Event received:', event.payload);
-
-        // loading stop
-        button_submitFormAction.removeAttribute("hidden");
-        button_submitFormActionWait.setAttribute("hidden", true);
-    });
-    listen('smart_action_waiting_error', (event) => {
-        console.log('Event received:', event.payload);
-
-        // TODO: handle the error
-
-        // loading stop
-        button_submitFormAction.removeAttribute("hidden");
-        button_submitFormActionWait.setAttribute("hidden", true);
-    });
-}
+const {listen} = window.__TAURI__.event;
 
 async function ui_notify_startup() {
     return await invoke("ui_notify_startup", {});
@@ -48,6 +13,10 @@ async function ui_request_execute_action(jsonSmartAction) {
     return await invoke("ui_request_execute_action", {jsonSmartAction});
 }
 
+async function ui_request_stop_action() {
+    return await invoke("ui_request_stop_action", {});
+}
+
 let actions = [];
 let currentSmartAction;
 let inputListeners = [];
@@ -57,7 +26,47 @@ const select_action = document.getElementById("select_action");
 const input_ActionDescription = document.getElementById('input_action-description');
 const div_actionProps = document.getElementById("div_action-props");
 const button_submitFormAction = document.getElementById("button_submit-form-action");
+// TODO: fix bug
+const button_submitFormActionStopRecording = document.getElementById("button_submit-form-action-stop-recording");
 const button_submitFormActionWait = document.getElementById("button_submit-form-action_wait");
+
+function listen_smart_action_server_events() {
+    listen('smart_action_recording_start', (event) => {
+        console.log('Event received:', event.payload);
+
+        // recording start
+        button_submitFormAction.setAttribute("hidden", true);
+        button_submitFormActionStopRecording.removeAttribute("hidden");
+        button_submitFormActionWait.textContent = event.payload;
+    });
+    listen('smart_action_waiting_start', (event) => {
+        console.log('Event received:', event.payload);
+
+        // loading start
+        button_submitFormAction.setAttribute("hidden", true);
+        button_submitFormActionStopRecording.setAttribute("hidden", true);
+        button_submitFormActionWait.removeAttribute("hidden");
+        button_submitFormActionWait.textContent = event.payload;
+    });
+    listen('smart_action_waiting_stop', (event) => {
+        console.log('Event received:', event.payload);
+
+        // loading stop
+        button_submitFormAction.removeAttribute("hidden");
+        button_submitFormActionStopRecording.setAttribute("hidden", true);
+        button_submitFormActionWait.setAttribute("hidden", true);
+    });
+    listen('smart_action_waiting_error', (event) => {
+        console.log('Event received:', event.payload);
+
+        // TODO: handle the error
+
+        // loading stop
+        button_submitFormAction.removeAttribute("hidden");
+        button_submitFormActionStopRecording.setAttribute("hidden", true);
+        button_submitFormActionWait.setAttribute("hidden", true);
+    });
+}
 
 select_action.addEventListener('change', function () {
     populateViewForAction();
@@ -68,6 +77,12 @@ button_submitFormAction.addEventListener('click', async function (e) {
     e.preventDefault();
 
     let _result = await ui_request_execute_action(extractSmartActionJsonFromForm());
+});
+
+button_submitFormAction.addEventListener('click', async function (e) {
+    e.preventDefault();
+
+    let _result = await ui_request_stop_action();
 });
 
 window.addEventListener("DOMContentLoaded", async () => {
