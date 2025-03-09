@@ -1,5 +1,5 @@
-use indexmap::IndexMap;
 use crate::domain::action_config::ActionConfig;
+use indexmap::IndexMap;
 
 pub struct ActionConfigParser;
 

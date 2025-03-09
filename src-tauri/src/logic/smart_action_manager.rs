@@ -1,11 +1,11 @@
 use crate::domain::app_config::AppConfig;
 use crate::domain::smart_action::{SmartAction, SmartActionState};
 use crate::logic::menu_manager::MenuManager;
+use crate::logic::tray_icon_manager::TrayIconManager;
 use std::process::{Child, Command};
 use std::sync::{Arc, Mutex};
 use std::thread;
 use tauri::{AppHandle, Emitter};
-use crate::logic::tray_icon_manager::TrayIconManager;
 
 pub struct SmartActionManager {
     app_handle: AppHandle,
@@ -113,15 +113,21 @@ impl SmartActionManager {
 
             if status.success() {
                 println!("Il processo è terminato con successo!");
-                app_handle.emit("smart_action_waiting_stop", "Stop waiting...").unwrap();
+                app_handle
+                    .emit("smart_action_waiting_stop", "Stop waiting...")
+                    .unwrap();
             } else if let Some(code) = status.code() {
                 println!("Il processo è terminato con codice di errore: {}", code);
                 // app_handle.emit("process-failed", code).unwrap();
-                app_handle.emit("smart_action_waiting_error", "Error during waiting...").unwrap();
+                app_handle
+                    .emit("smart_action_waiting_error", "Error during waiting...")
+                    .unwrap();
             } else {
                 println!("Il processo è terminato in modo anomalo.");
                 // app_handle.emit("process-failed", "unknown").unwrap();
-                app_handle.emit("smart_action_waiting_error", "Error during waiting...").unwrap();
+                app_handle
+                    .emit("smart_action_waiting_error", "Error during waiting...")
+                    .unwrap();
             }
 
             tray_icon_manager.set_default_icon();

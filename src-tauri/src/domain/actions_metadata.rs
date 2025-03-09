@@ -1,5 +1,5 @@
-use indexmap::IndexMap;
 use super::action_config::ActionConfig;
+use indexmap::IndexMap;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Deserialize, Serialize)]

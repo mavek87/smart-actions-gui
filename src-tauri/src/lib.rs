@@ -10,7 +10,7 @@ use tauri::{
         SubmenuBuilder,
     },
     tray::TrayIconBuilder,
-    Manager, State,
+    Emitter, Manager, State,
 };
 
 use commands::{
@@ -195,10 +195,35 @@ pub fn run() {
 
             app.manage(app_state);
 
+            // TODO: refactoring needed
+            #[cfg(desktop)]
+            {
+                use tauri_plugin_global_shortcut::{Code, Modifiers, ShortcutState};
+
+                app.handle().plugin(
+                    tauri_plugin_global_shortcut::Builder::new()
+                        .with_shortcuts(["alt+s", "alt+h"])?
+                        .with_handler(|app, shortcut, event| {
+                            if event.state == ShortcutState::Pressed {
+                                if shortcut.matches(Modifiers::ALT, Code::KeyS) {
+                                    println!("ALT+S Pressed! - start smart ");
+                                    let app_state: State<AppState> = app.state();
+                                    app_state.smart_action_manager.start_current_smart_action();
+                                } else if shortcut.matches(Modifiers::ALT, Code::KeyH) {
+                                    println!("ALT+H Pressed!");
+                                    let app_state: State<AppState> = app.state();
+                                    app_state.smart_action_manager.stop_current_smart_action();
+                                }
+                            }
+                        })
+                        .build(),
+                )?;
+            }
+
             Ok(())
         })
         // .manage(app_state)
-        .plugin(tauri_plugin_opener::init())
+        // .plugin(tauri_plugin_opener::init())
         .invoke_handler(tauri::generate_handler![
             ui_notify_change_action,
             ui_notify_startup,
@@ -208,15 +233,3 @@ pub fn run() {
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
-
-// use tauri::GlobalShortcutManager;
-//
-// // Registriamo la scorciatoia CTRL + U
-// app_handle.global_shortcut_manager().register("CTRL + U", move || {
-// // Apre una finestra di dialogo con un messaggio
-// tauri::api::dialog::message(
-// Some(&app_handle),
-// "Scorciatoia premuta",
-// "Hai premuto CTRL + U!",
-// );
-// });
