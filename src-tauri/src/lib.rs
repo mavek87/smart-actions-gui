@@ -10,7 +10,7 @@ use tauri::{
         SubmenuBuilder,
     },
     tray::TrayIconBuilder,
-    Emitter, Manager, State,
+    Manager, State,
 };
 
 use commands::{
