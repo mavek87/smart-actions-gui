@@ -77,9 +77,6 @@ impl SmartActionManager {
                     }
                 }
 
-                let command_arg = format!("{} {}", arg_param, arg_value);
-                println!("Argomento: {}", command_arg);
-
                 // TODO: what to do if value is empty?
                 if !arg_value.is_empty() {
                     command_smart_action.arg(arg_param);
@@ -91,10 +88,13 @@ impl SmartActionManager {
                 .spawn()
                 .expect("Failed to start 'dictate_text' action from smart-actions.sh");
 
+            let id = process_command_smart_action.id();
+            println!("Process ID: {}", id);
+
             *self.process_start.lock().unwrap() = Some(process_command_smart_action);
 
             self.app_handle
-                .emit("smart_action_recording_start", "start recording...")
+                .emit("smart_action_recording_start", "Start recording...")
                 .unwrap();
 
             println!("Recording started!");
@@ -108,7 +108,7 @@ impl SmartActionManager {
         self.menu_manager.lock().unwrap().set_action_stopped();
 
         self.app_handle
-            .emit("smart_action_waiting_start", "start waiting...")
+            .emit("smart_action_waiting_start", "Start waiting...")
             .unwrap();
 
         // Gestione del processo di registrazione
@@ -129,11 +129,11 @@ impl SmartActionManager {
                 if let Err(err) = child.wait() {
                     eprintln!("Error while waiting for process termination: {}", err);
                     self.app_handle
-                        .emit("smart_action_waiting_error", "error during waiting...")
+                        .emit("smart_action_waiting_error", "Error during waiting...")
                         .unwrap();
                 } else {
                     self.app_handle
-                        .emit("smart_action_waiting_stop", "stop waiting...")
+                        .emit("smart_action_waiting_stop", "Stop waiting...")
                         .unwrap();
                 }
             }

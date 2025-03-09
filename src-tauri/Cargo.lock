@@ -3417,6 +3417,7 @@ name = "smart-actions-gui"
 version = "0.1.0"
 dependencies = [
  "indexmap 2.7.1",
+ "nix",
  "regex",
  "serde",
  "serde_json",
