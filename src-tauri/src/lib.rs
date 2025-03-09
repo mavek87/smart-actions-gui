@@ -2,6 +2,7 @@ mod commands;
 mod domain;
 mod logic;
 
+use std::collections::HashMap;
 use std::sync::Mutex;
 use tauri::{
     menu::{
@@ -18,13 +19,12 @@ use commands::{
     ui_request_stop_action::ui_request_stop_action,
 };
 
-use domain::app_state::AppState;
+use domain::{app_state::AppState, smart_action::SmartAction};
 
-use crate::domain::smart_action::SmartAction;
-use crate::logic::smart_action_manager::SmartActionManager;
-use crate::logic::tray_icon_manager::TrayIconManager;
-use logic::config_manager::ConfigManager;
-use logic::menu_manager::MenuManager;
+use logic::{
+    config_manager::ConfigManager, menu_manager::MenuManager,
+    smart_action_manager::SmartActionManager, tray_icon_manager::TrayIconManager,
+};
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -145,6 +145,31 @@ pub fn run() {
             tray_icon_manager.set_default_icon();
             // tray_icon_manager.clone().set_default_icon();
 
+            let arg_default_audio_device: HashMap<String, String> = HashMap::from([
+                ("arg".to_string(), "-a".to_string()),
+                ("audio_device".to_string(), "hw:3,0".to_string()),
+            ]);
+            let arg_default_audio_sampling_rate: HashMap<String, String> = HashMap::from([
+                ("arg".to_string(), "-r".to_string()),
+                ("audio_sampling_rate".to_string(), "44000".to_string()),
+            ]);
+            let arg_default_model: HashMap<String, String> = HashMap::from([
+                ("arg".to_string(), "-m".to_string()),
+                ("model".to_string(), "medium".to_string()),
+            ]);
+            let arg_default_task: HashMap<String, String> = HashMap::from([
+                ("arg".to_string(), "-t".to_string()),
+                ("task".to_string(), "transcribe".to_string()),
+            ]);
+            let arg_default_output_format: HashMap<String, String> = HashMap::from([
+                ("arg".to_string(), "-of".to_string()),
+                ("output_format".to_string(), "string".to_string()),
+            ]);
+            let arg_default_output_terminator: HashMap<String, String> = HashMap::from([
+                ("arg".to_string(), "-ot".to_string()),
+                ("output_terminator".to_string(), "none".to_string()),
+            ]);
+
             let app_state = AppState {
                 smart_action_manager: SmartActionManager::new(
                     app.handle().clone(),
@@ -152,12 +177,17 @@ pub fn run() {
                     menu_manager.clone(),
                     tray_icon_manager.clone(),
                     SmartAction {
-                        // TODO: bug. if ui doesnt call change select probably, it doesnt work (uses the empty smart action)
-                        // this is not easy to fix because at the moment in the view the first smart action set is random... check why
-                        value: String::from("empty_smart_action_value"),
-                        name: String::from("empty_smart_action_name"),
-                        description: String::from("empty_smart_action_description"),
-                        args: vec![],
+                        value: String::from("dictate_text"),
+                        name: String::from("Dictate Text"),
+                        description: String::from("Record an audio and convert it to text."),
+                        args: vec![
+                            arg_default_audio_device,
+                            arg_default_audio_sampling_rate,
+                            arg_default_model,
+                            arg_default_task,
+                            arg_default_output_format,
+                            arg_default_output_terminator,
+                        ],
                     },
                 ),
                 tray_icon_manager: Mutex::new(tray_icon_manager.clone()),

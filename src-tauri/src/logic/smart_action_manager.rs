@@ -100,10 +100,8 @@ impl SmartActionManager {
         let child_arc = Arc::new(Mutex::new(process_command_smart_action));
         let app_handle = Arc::new(Mutex::new(self.app_handle.clone()));
 
-
         let tray_icon_manager = self.tray_icon_manager.lock().unwrap().clone();
 
-        // Monitoriamo l'uscita del processo in un thread separato
         thread::spawn(move || {
             let app_handle = app_handle.lock().unwrap();
 
