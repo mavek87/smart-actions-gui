@@ -106,7 +106,7 @@ pub fn run() {
             );
 
             let tray_icon = TrayIconBuilder::new()
-                .icon(app.default_window_icon().unwrap().clone())
+                // .icon(app.default_window_icon().unwrap().clone())
                 .menu(&menu)
                 .on_menu_event(move |app, event| match event.id.as_ref() {
                     "start" => {
@@ -142,6 +142,8 @@ pub fn run() {
                 .build(app)?;
 
             let tray_icon_manager = TrayIconManager::new(tray_icon.clone());
+            tray_icon_manager.set_default_icon();
+            // tray_icon_manager.clone().set_default_icon();
 
             let app_state = AppState {
                 smart_action_manager: SmartActionManager::new(

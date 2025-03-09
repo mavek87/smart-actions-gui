@@ -18,7 +18,7 @@ impl TrayIconManager {
     pub fn new(tray_icon: TrayIcon) -> Self {
         Self {
             tray_icon,
-            default_app_icon_path: "icons/icon.ico".to_string(),
+            default_app_icon_path: "icons/normal.ico".to_string(),
             recording_app_icon_path: "icons/recording.ico".to_string(),
             waiting_app_icon_path: "icons/waiting.ico".to_string(),
         }
