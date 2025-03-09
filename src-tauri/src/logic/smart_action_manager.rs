@@ -5,11 +5,13 @@ use std::process::{Child, Command};
 use std::sync::{Arc, Mutex};
 use std::thread;
 use tauri::{AppHandle, Emitter};
+use crate::logic::tray_icon_manager::TrayIconManager;
 
 pub struct SmartActionManager {
     app_handle: AppHandle,
     app_config: AppConfig,
     menu_manager: Mutex<MenuManager>,
+    tray_icon_manager: Mutex<TrayIconManager>,
     smart_action_state: Mutex<SmartActionState>,
     // process_start: Mutex<Option<Child>>,
     process_stop: Mutex<Option<Child>>,
@@ -20,12 +22,14 @@ impl SmartActionManager {
         app_handle: AppHandle,
         app_config: AppConfig,
         menu_manager: MenuManager,
+        tray_icon_manager: TrayIconManager,
         smart_action: SmartAction,
     ) -> Self {
         SmartActionManager {
             app_handle,
             app_config,
             menu_manager: Mutex::new(menu_manager),
+            tray_icon_manager: Mutex::new(tray_icon_manager),
             smart_action_state: Mutex::new(SmartActionState::new(smart_action)),
             // process_start: Mutex::new(None::<Child>),
             process_stop: Mutex::new(None::<Child>),
@@ -49,6 +53,8 @@ impl SmartActionManager {
 
         // TODO: unlock if error occurs
         self.menu_manager.lock().unwrap().set_action_started();
+
+        self.tray_icon_manager.lock().unwrap().set_recording_icon();
 
         let smart_action_state = self.smart_action_state.lock().unwrap();
 
@@ -94,11 +100,12 @@ impl SmartActionManager {
         let child_arc = Arc::new(Mutex::new(process_command_smart_action));
         let app_handle = Arc::new(Mutex::new(self.app_handle.clone()));
 
+
+        let tray_icon_manager = self.tray_icon_manager.lock().unwrap().clone();
+
         // Monitoriamo l'uscita del processo in un thread separato
         thread::spawn(move || {
             let app_handle = app_handle.lock().unwrap();
-
-            // app_handle.emit("process-success", {}).unwrap();
 
             let status = child_arc
                 .lock()
@@ -118,6 +125,8 @@ impl SmartActionManager {
                 // app_handle.emit("process-failed", "unknown").unwrap();
                 app_handle.emit("smart_action_waiting_error", "Error during waiting...").unwrap();
             }
+
+            tray_icon_manager.set_default_icon();
         });
 
         // let id = process_command_smart_action.id();
@@ -138,6 +147,7 @@ impl SmartActionManager {
     pub fn stop_current_smart_action(&self) {
         // TODO: unlock if error occurs (???)
         self.menu_manager.lock().unwrap().set_action_stopped();
+        self.tray_icon_manager.lock().unwrap().set_waiting_icon();
 
         self.app_handle
             .emit("smart_action_waiting_start", "Waiting response...")

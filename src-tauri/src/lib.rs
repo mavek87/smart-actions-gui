@@ -14,13 +14,15 @@ use tauri::{
 
 use commands::{
     ui_notify_change_action::ui_notify_change_action, ui_notify_startup::ui_notify_startup,
-    ui_request_execute_action::ui_request_execute_action, ui_request_stop_action::ui_request_stop_action,
+    ui_request_execute_action::ui_request_execute_action,
+    ui_request_stop_action::ui_request_stop_action,
 };
 
 use domain::app_state::AppState;
 
 use crate::domain::smart_action::SmartAction;
 use crate::logic::smart_action_manager::SmartActionManager;
+use crate::logic::tray_icon_manager::TrayIconManager;
 use logic::config_manager::ConfigManager;
 use logic::menu_manager::MenuManager;
 
@@ -103,26 +105,7 @@ pub fn run() {
                 stop_action_menu_item,
             );
 
-            let app_state = AppState {
-                smart_action_manager: SmartActionManager::new(
-                    app.handle().clone(),
-                    app_config,
-                    menu_manager.clone(),
-                    // TODO: bug. if ui doesnt call change select probably, it doesnt work (uses the empty smart action)
-                    // this is not easy to fix because at the moment in the view the first smart action set is random... check why
-                    SmartAction {
-                        value: String::from("empty_smart_action_value"),
-                        name: String::from("empty_smart_action_name"),
-                        description: String::from("empty_smart_action_description"),
-                        args: vec![],
-                    },
-                ),
-                menu_manager: Mutex::new(menu_manager.clone()),
-            };
-
-            app.manage(app_state);
-
-            TrayIconBuilder::new()
+            let tray_icon = TrayIconBuilder::new()
                 .icon(app.default_window_icon().unwrap().clone())
                 .menu(&menu)
                 .on_menu_event(move |app, event| match event.id.as_ref() {
@@ -157,6 +140,29 @@ pub fn run() {
                 })
                 .show_menu_on_left_click(true)
                 .build(app)?;
+
+            let tray_icon_manager = TrayIconManager::new(tray_icon.clone());
+
+            let app_state = AppState {
+                smart_action_manager: SmartActionManager::new(
+                    app.handle().clone(),
+                    app_config,
+                    menu_manager.clone(),
+                    tray_icon_manager.clone(),
+                    SmartAction {
+                        // TODO: bug. if ui doesnt call change select probably, it doesnt work (uses the empty smart action)
+                        // this is not easy to fix because at the moment in the view the first smart action set is random... check why
+                        value: String::from("empty_smart_action_value"),
+                        name: String::from("empty_smart_action_name"),
+                        description: String::from("empty_smart_action_description"),
+                        args: vec![],
+                    },
+                ),
+                tray_icon_manager: Mutex::new(tray_icon_manager.clone()),
+            };
+
+            app.manage(app_state);
+
             Ok(())
         })
         // .manage(app_state)
