@@ -104,6 +104,8 @@ window.addEventListener("DOMContentLoaded", async () => {
         select_action.selectedIndex = 0;
         populateViewForAction();
     }
+
+    select_action.title = "Select a smart action to execute";
 });
 
 function notify_change_smart_action_to_tauri() {
@@ -193,6 +195,7 @@ function buildElementForActionType(action_key, action_value) {
         case "language":
             const languageOptionsMetadata = {
                 "defaultValue": "",
+                "tooltip": "Suggest a language to use by the speech to text software, otherwise it will find out what language is spoken by the user",
                 "values": [
                     {"value": "", "name": "None"},
                     {"value": "en", "name": "English"},
@@ -206,6 +209,7 @@ function buildElementForActionType(action_key, action_value) {
             const selectionTargetOptionsMetadata = {
                 // NOTE: terminal doesn't make sense in a GUI, so it's omitted
                 "defaultValue": "none",
+                "tooltip": "If 'none' isn't selected the AI can take into account the selected text or the text copied into the clipboard",
                 "values": [
                     {"value": "none", "name": "None"},
                     {"value": "primary", "name": "Selected Text"},
@@ -225,6 +229,7 @@ function buildElementForActionType(action_key, action_value) {
         case "model":
             const modelOptionsMetadata = {
                 "defaultValue": "medium",
+                "tooltip": "The model used by the speach to text software (higher = more accurate, lower = faster)",
                 "values": [
                     {"value": "small", "name": "Small"},
                     {"value": "medium", "name": "Medium"},
@@ -235,6 +240,7 @@ function buildElementForActionType(action_key, action_value) {
         case "task":
             const taskOptionsMetadata = {
                 "defaultValue": "transcribe",
+                "tooltip": "The speech to text model can transcribe what it hears or translate it into english",
                 "values": [
                     {"value": "transcribe", "name": "Transcribe"},
                     {"value": "translate", "name": "Translate"},
@@ -245,6 +251,7 @@ function buildElementForActionType(action_key, action_value) {
             const outputFormatOptionsMetadata = {
                 // NOTE: probably text is a better default here for a GUI instead of string which is better for the CLI software
                 "defaultValue": "text",
+                "tooltip": "The output format can be text format (multiple lines) or string format (one line)",
                 "values": [
                     {"value": "string", "name": "String"},
                     {"value": "text", "name": "Text"},
@@ -255,6 +262,7 @@ function buildElementForActionType(action_key, action_value) {
             const outputTerminatorOptionsMetadata = {
                 // NOTE: probably text is a better default here for a GUI instead of string which is better for the CLI software
                 "defaultValue": "none",
+                "tooltip": "The output of the smart action can end with a Enter character or nothing more than the output itself",
                 "values": [
                     {"value": "none", "name": "None"},
                     {"value": "enter", "name": "Enter"},
@@ -295,8 +303,9 @@ function buildDefaultElement(action_key, action_value) {
 }
 
 function buildSelectElement(action_key, action_value, optionsMetadata) {
-    const select = document.createElement("select");
+    const innerDiv = document.createElement("div");
 
+    const select = document.createElement("select");
     optionsMetadata.values.forEach(optionMetadata => {
         const uiOption = document.createElement("option");
 
@@ -319,12 +328,15 @@ function buildSelectElement(action_key, action_value, optionsMetadata) {
         listenerFn: selectChangeListener
     });
 
+    if (optionsMetadata.tooltip) {
+        select.title = optionsMetadata.tooltip;
+    }
+
     const labelText = document.createElement('label');
     labelText.id = 'form-action-props_label_' + action_key
     labelText.htmlFor = select.id
     labelText.textContent = convertFirstCharToUppercase(convertSnakeToSpace(action_key));
 
-    const innerDiv = document.createElement("div");
     innerDiv.appendChild(labelText);
     innerDiv.appendChild(select);
     return innerDiv;
