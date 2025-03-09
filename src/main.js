@@ -26,7 +26,6 @@ const select_action = document.getElementById("select_action");
 const input_ActionDescription = document.getElementById('input_action-description');
 const div_actionProps = document.getElementById("div_action-props");
 const button_submitFormAction = document.getElementById("button_submit-form-action");
-// TODO: fix bug
 const button_submitFormActionStopRecording = document.getElementById("button_submit-form-action-stop-recording");
 const button_submitFormActionWait = document.getElementById("button_submit-form-action_wait");
 
@@ -171,32 +170,9 @@ function populateViewSettingsForAction(action) {
             div_actionProps.appendChild(divWithGrid);
         }
 
-        const inputText = document.createElement('input');
-        inputText.type = 'text';
-        inputText.value = action_default_value || "";
-        inputText.id = 'form-action-props_input_' + action_default_key;
-        inputText.name = action_default_key;
-        const inputChangeListener = function (event) {
-            console.log(event.target.value);
-            notify_change_smart_action_to_tauri();
-        }
-        inputText.addEventListener('input', inputChangeListener);
-        inputListeners.push({
-            elementId: inputText.id,
-            elementInstance: inputText,
-            listenerFn: inputChangeListener
-        });
+        const element = buildElementForActionType(action_default_key, action_default_value);
 
-        const labelText = document.createElement('label');
-        labelText.id = 'form-action-props_label_' + action_default_key
-        labelText.htmlFor = inputText.id
-        labelText.textContent = convertFirstCharToUppercase(convertSnakeToSpace(action_default_key));
-
-        const innerDiv = document.createElement("div");
-        innerDiv.appendChild(labelText);
-        innerDiv.appendChild(inputText);
-
-        divWithGrid.appendChild(innerDiv);
+        divWithGrid.appendChild(element);
 
         counterElementsInRow++;
     }
@@ -210,4 +186,146 @@ function convertSnakeToSpace(str) {
 
 function convertFirstCharToUppercase(str) {
     return str.charAt(0).toUpperCase() + str.slice(1);
+}
+
+function buildElementForActionType(action_key, action_value) {
+    switch (action_key) {
+        case "language":
+            const languageOptionsMetadata = {
+                "defaultValue": "",
+                "values": [
+                    {"value": "", "name": "None"},
+                    {"value": "en", "name": "English"},
+                    {"value": "it", "name": "Italian"},
+                    {"value": "es", "name": "Spanish"},
+                    {"value": "fr", "name": "French"},
+                ]
+            }
+            return buildSelectElement(action_key, action_value, languageOptionsMetadata);
+        case "selection_target":
+            const selectionTargetOptionsMetadata = {
+                // NOTE: terminal doesn't make sense in a GUI, so it's omitted
+                "defaultValue": "none",
+                "values": [
+                    {"value": "none", "name": "None"},
+                    {"value": "primary", "name": "Selected Text"},
+                    {"value": "clipboard", "name": "Copied Text"},
+                ]
+            }
+            return buildSelectElement(action_key, action_value, selectionTargetOptionsMetadata);
+        case "output_destination":
+            const outputDestinationOptionsMetadata = {
+                // NOTE: terminal doesn't make sense in a GUI, so it's omitted
+                "defaultValue": "display",
+                "values": [
+                    {"value": "display", "name": "Display"},
+                ]
+            }
+            return buildSelectElement(action_key, action_value, outputDestinationOptionsMetadata);
+        case "model":
+            const modelOptionsMetadata = {
+                "defaultValue": "medium",
+                "values": [
+                    {"value": "small", "name": "Small"},
+                    {"value": "medium", "name": "Medium"},
+                    {"value": "large", "name": "Large"},
+                ]
+            }
+            return buildSelectElement(action_key, action_value, modelOptionsMetadata);
+        case "task":
+            const taskOptionsMetadata = {
+                "defaultValue": "transcribe",
+                "values": [
+                    {"value": "transcribe", "name": "Transcribe"},
+                    {"value": "translate", "name": "Translate"},
+                ]
+            }
+            return buildSelectElement(action_key, action_value, taskOptionsMetadata);
+        case "output_format":
+            const outputFormatOptionsMetadata = {
+                // NOTE: probably text is a better default here for a GUI instead of string which is better for the CLI software
+                "defaultValue": "text",
+                "values": [
+                    {"value": "string", "name": "String"},
+                    {"value": "text", "name": "Text"},
+                ]
+            }
+            return buildSelectElement(action_key, action_value, outputFormatOptionsMetadata);
+        case "output_terminator":
+            const outputTerminatorOptionsMetadata = {
+                // NOTE: probably text is a better default here for a GUI instead of string which is better for the CLI software
+                "defaultValue": "none",
+                "values": [
+                    {"value": "none", "name": "None"},
+                    {"value": "enter", "name": "Enter"},
+                ]
+            }
+            return buildSelectElement(action_key, action_value, outputTerminatorOptionsMetadata);
+        default:
+            return buildDefaultElement(action_key, action_value);
+    }
+}
+
+function buildDefaultElement(action_key, action_value) {
+    const inputText = document.createElement('input');
+    inputText.type = 'text';
+    inputText.value = action_value || "";
+    inputText.id = 'form-action-props_input_' + action_key;
+    inputText.name = action_key;
+    const inputChangeListener = function (event) {
+        console.log(event.target.value);
+        notify_change_smart_action_to_tauri();
+    }
+    inputText.addEventListener('input', inputChangeListener);
+    inputListeners.push({
+        elementId: inputText.id,
+        elementInstance: inputText,
+        listenerFn: inputChangeListener
+    });
+
+    const labelText = document.createElement('label');
+    labelText.id = 'form-action-props_label_' + action_key
+    labelText.htmlFor = inputText.id
+    labelText.textContent = convertFirstCharToUppercase(convertSnakeToSpace(action_key));
+
+    const innerDiv = document.createElement("div");
+    innerDiv.appendChild(labelText);
+    innerDiv.appendChild(inputText);
+    return innerDiv;
+}
+
+function buildSelectElement(action_key, action_value, optionsMetadata) {
+    const select = document.createElement("select");
+
+    optionsMetadata.values.forEach(optionMetadata => {
+        const uiOption = document.createElement("option");
+
+        uiOption.value = optionMetadata.value;
+        uiOption.textContent = optionMetadata.name;
+        select.appendChild(uiOption);
+    });
+
+    select.value = optionsMetadata.defaultValue || action_value;
+    select.id = 'form-action-props_select_' + action_key;
+    select.name = action_key;
+    const selectChangeListener = function (event) {
+        console.log(event.target.value);
+        notify_change_smart_action_to_tauri();
+    }
+    select.addEventListener('change', selectChangeListener);
+    inputListeners.push({
+        elementId: select.id,
+        elementInstance: select,
+        listenerFn: selectChangeListener
+    });
+
+    const labelText = document.createElement('label');
+    labelText.id = 'form-action-props_label_' + action_key
+    labelText.htmlFor = select.id
+    labelText.textContent = convertFirstCharToUppercase(convertSnakeToSpace(action_key));
+
+    const innerDiv = document.createElement("div");
+    innerDiv.appendChild(labelText);
+    innerDiv.appendChild(select);
+    return innerDiv;
 }
