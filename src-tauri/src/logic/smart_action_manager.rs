@@ -1,5 +1,6 @@
 use crate::domain::app_config::AppConfig;
-use crate::domain::smart_action::{SmartAction, SmartActionState};
+use crate::domain::smart_action::{SmartAction, SmartActionState, SmartActionStatus};
+use crate::logic::audio_player_manager::AudioPlayerManager;
 use crate::logic::menu_manager::MenuManager;
 use crate::logic::tray_icon_manager::TrayIconManager;
 use std::process::{Child, Command};
@@ -12,6 +13,7 @@ pub struct SmartActionManager {
     app_config: AppConfig,
     menu_manager: Mutex<MenuManager>,
     tray_icon_manager: Mutex<TrayIconManager>,
+    audio_player_manager: Mutex<AudioPlayerManager>,
     smart_action_state: Mutex<SmartActionState>,
     // process_start: Mutex<Option<Child>>,
     process_stop: Mutex<Option<Child>>,
@@ -23,6 +25,7 @@ impl SmartActionManager {
         app_config: AppConfig,
         menu_manager: MenuManager,
         tray_icon_manager: TrayIconManager,
+        audio_player_manager: AudioPlayerManager,
         smart_action: SmartAction,
     ) -> Self {
         SmartActionManager {
@@ -30,6 +33,7 @@ impl SmartActionManager {
             app_config,
             menu_manager: Mutex::new(menu_manager),
             tray_icon_manager: Mutex::new(tray_icon_manager),
+            audio_player_manager: Mutex::new(audio_player_manager),
             smart_action_state: Mutex::new(SmartActionState::new(smart_action)),
             // process_start: Mutex::new(None::<Child>),
             process_stop: Mutex::new(None::<Child>),
@@ -60,17 +64,9 @@ impl SmartActionManager {
         let current_smart_action_value = smart_action_state.value.lock().unwrap();
         let current_smart_action_args = smart_action_state.args.lock().unwrap();
 
-        // TODO: use a manager to check if audio is enabled
-        // ffplay -v 0 -nodisp -autoexit dictate-text-on.mp3
-        Command::new("ffplay")
-            .arg("-v")
-            .arg("0")
-            .arg("-nodisp")
-            .arg("-autoexit")
-            .arg(format!("sounds/{}_on.mp3", current_smart_action_value))
-            .spawn()
-            .expect(&format!("Failed to start '{}_on.mp3'", current_smart_action_value));
-        println!("run sound: sounds/{}_on.mp3", current_smart_action_value);
+        let mut audio_player_manager = self.audio_player_manager.lock().unwrap();
+        audio_player_manager
+            .play_sound_for_smart_action(current_smart_action_value.clone(), SmartActionStatus::ON);
 
         // if self.process_start.lock().unwrap().is_none() {
         let mut command_smart_action = Command::new("bash");
@@ -108,18 +104,19 @@ impl SmartActionManager {
             .spawn()
             .expect("Failed to start 'dictate_text' action from smart-actions.sh"); // TODO: remove hardcoded value
 
-        let child_arc = Arc::new(Mutex::new(process_command_smart_action));
-        let app_handle = Arc::new(Mutex::new(self.app_handle.clone()));
-
-        let tray_icon_manager = self.tray_icon_manager.lock().unwrap().clone();
-
-
-        let x = Arc::new(Mutex::new(current_smart_action_value.clone()));
+        let arc_mutex_app_handle = Arc::new(Mutex::new(self.app_handle.clone()));
+        let arc_mutex_process_command_smart_action =
+            Arc::new(Mutex::new(process_command_smart_action));
+        let arc_mutex_tray_icon_manager =
+            Arc::new(Mutex::new(self.tray_icon_manager.lock().unwrap().clone()));
+        let arc_mutex_audio_player_manager = Arc::new(Mutex::new(audio_player_manager.clone()));
+        let arc_mutex_current_smart_action_value =
+            Arc::new(Mutex::new(current_smart_action_value.clone()));
 
         thread::spawn(move || {
-            let app_handle = app_handle.lock().unwrap();
+            let app_handle = arc_mutex_app_handle.lock().unwrap();
 
-            let status = child_arc
+            let status = arc_mutex_process_command_smart_action
                 .lock()
                 .unwrap()
                 .wait()
@@ -132,33 +129,29 @@ impl SmartActionManager {
                     .unwrap();
             } else if let Some(code) = status.code() {
                 println!("Il processo è terminato con codice di errore: {}", code);
-                // app_handle.emit("process-failed", code).unwrap();
                 app_handle
                     .emit("smart_action_waiting_error", "Error during waiting...")
                     .unwrap();
             } else {
                 println!("Il processo è terminato in modo anomalo.");
-                // app_handle.emit("process-failed", "unknown").unwrap();
                 app_handle
                     .emit("smart_action_waiting_error", "Error during waiting...")
                     .unwrap();
             }
 
-            tray_icon_manager.set_default_icon();
+            arc_mutex_tray_icon_manager
+                .lock()
+                .unwrap()
+                .set_default_icon();
 
-            let current_smart_action_value = x.lock().unwrap();
-
-            // TODO: use a manager to check if audio is enabled
-            // ffplay -v 0 -nodisp -autoexit dictate-text-on.mp3
-            Command::new("ffplay")
-                .arg("-v")
-                .arg("0")
-                .arg("-nodisp")
-                .arg("-autoexit")
-                .arg(format!("sounds/{}_off.mp3", current_smart_action_value))
-                .spawn()
-                .expect(&format!("Failed to start '{}_off.mp3'", current_smart_action_value));
-            println!("run sound: sounds/{}_off.mp3", current_smart_action_value);
+            let current_smart_action_value = arc_mutex_current_smart_action_value.lock().unwrap();
+            arc_mutex_audio_player_manager
+                .lock()
+                .unwrap()
+                .play_sound_for_smart_action(
+                    current_smart_action_value.clone(),
+                    SmartActionStatus::OFF,
+                );
         });
 
         // let id = process_command_smart_action.id();

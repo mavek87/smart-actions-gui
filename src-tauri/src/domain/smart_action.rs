@@ -1,5 +1,7 @@
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
+use std::fmt;
+use std::fmt::Display;
 use std::sync::{Arc, Mutex};
 
 #[derive(Debug, Deserialize, Serialize, Clone)]
@@ -26,5 +28,31 @@ impl SmartActionState {
             description: Arc::new(Mutex::new(smart_action.description)),
             args: Arc::new(Mutex::new(smart_action.args)),
         }
+    }
+}
+
+// TODO: improve the possible statuses (off [completed|failed|not_executed?], running, recording, waiting, etc...)
+#[derive(Debug, Serialize, Deserialize)]
+pub enum SmartActionStatus {
+    ON,
+    OFF,
+}
+
+impl SmartActionStatus {
+    pub fn value(&self) -> &'static str {
+        match self {
+            SmartActionStatus::ON => "on",
+            SmartActionStatus::OFF => "off",
+        }
+    }
+}
+
+impl Display for SmartActionStatus {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        let valore = match self {
+            SmartActionStatus::ON => "cane",
+            SmartActionStatus::OFF => "gatto",
+        };
+        write!(f, "{}", valore)
     }
 }

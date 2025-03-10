@@ -3,7 +3,6 @@ mod domain;
 mod logic;
 
 use std::collections::HashMap;
-use std::process::Command;
 use std::string::ToString;
 use std::sync::Mutex;
 use tauri::{
@@ -24,7 +23,7 @@ use commands::{
 use domain::{app_state::AppState, smart_action::SmartAction};
 
 use logic::{
-    config_manager::ConfigManager, menu_manager::MenuManager,
+    config_manager::ConfigManager, menu_manager::MenuManager, audio_player_manager::AudioPlayerManager,
     smart_action_manager::SmartActionManager, tray_icon_manager::TrayIconManager,
 };
 
@@ -55,7 +54,7 @@ pub fn run() {
             let stop_action_menu_item =
                 MenuItem::with_id(app, "stop", "Stop", false, Some("Ctrl+E"))?;
 
-            // TODO: use the current language if present
+            // TODO: use the current language if present (A language manager could be created too)
             //let lang_str = "unset";
 
             // https://v2.tauri.app/learn/window-menu/
@@ -176,33 +175,11 @@ pub fn run() {
                         .with_handler(|app, shortcut, event| {
                             if event.state == ShortcutState::Pressed {
                                 if shortcut.matches(Modifiers::ALT, Code::KeyS) {
-                                    println!("ALT+S Pressed! - start smart ");
-
-                                    // ffplay -v 0 -nodisp -autoexit dictate-text-on.mp3
-                                    Command::new("ffplay")
-                                        .arg("-v")
-                                        .arg("0")
-                                        .arg("-nodisp")
-                                        .arg("-autoexit")
-                                        .arg("sounds/dictate-text-on.mp3")
-                                        .spawn()
-                                        .expect("Failed to start 'dictate-text-on.mp3'");
-
+                                    println!("ALT+S Pressed! - start smart action");
                                     let app_state: State<AppState> = app.state();
                                     app_state.smart_action_manager.start_current_smart_action();
                                 } else if shortcut.matches(Modifiers::ALT, Code::KeyH) {
-                                    println!("ALT+H Pressed!");
-
-                                    // ffplay -v 0 -nodisp -autoexit dictate-text-off.mp3
-                                    Command::new("ffplay")
-                                        .arg("-v")
-                                        .arg("0")
-                                        .arg("-nodisp")
-                                        .arg("-autoexit")
-                                        .arg("sounds/dictate-text-off.mp3")
-                                        .spawn()
-                                        .expect("Failed to start 'dictate-text-off.mp3'");
-
+                                    println!("ALT+H Pressed! - stop smart action");
                                     let app_state: State<AppState> = app.state();
                                     app_state.smart_action_manager.stop_current_smart_action();
                                 }
@@ -237,12 +214,15 @@ pub fn run() {
                 ("output_terminator".to_string(), "none".to_string()),
             ]);
 
+            let audio_player_manager = AudioPlayerManager::new(true);
+
             let app_state = AppState {
                 smart_action_manager: SmartActionManager::new(
                     app.handle().clone(),
                     app_config,
                     menu_manager.clone(),
                     tray_icon_manager.clone(),
+                    audio_player_manager.clone(),
                     SmartAction {
                         value: String::from("dictate_text"),
                         name: String::from("Dictate Text"),
