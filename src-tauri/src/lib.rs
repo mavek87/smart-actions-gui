@@ -3,6 +3,8 @@ mod domain;
 mod logic;
 
 use std::collections::HashMap;
+use std::process::Command;
+use std::string::ToString;
 use std::sync::Mutex;
 use tauri::{
     menu::{
@@ -26,13 +28,18 @@ use logic::{
     smart_action_manager::SmartActionManager, tray_icon_manager::TrayIconManager,
 };
 
+const CONFIG_FILE: &str = "assets/config.json";
+const APP_NAME: &str = "smart-actions-gui";
+const APP_VERSION: &str = "0.1.0";
+const WEBSITE_LABEL: &str = "Github Repository";
+const WEBSITE: &str = "https://github.com/mavek87/smart-actions-gui";
+const AUTHORS: &[&str] = &["Matteo Veroni"];
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     let config_manager: ConfigManager = ConfigManager::new();
 
-    let app_config = config_manager
-        .read_config("assets/config.json".to_string())
-        .unwrap();
+    let app_config = config_manager.read_config(CONFIG_FILE.to_string()).unwrap();
     println!("app_config: {:?}", app_config);
 
     tauri::Builder::default()
@@ -71,12 +78,20 @@ pub fn run() {
                 .build()?;
 
             let about_metadata = AboutMetadataBuilder::new()
-                .name(Some("smart-actions-gui"))
-                .version(Some("0.1.0"))
-                .website_label(Some("Github Repository"))
-                .website(Some("https://github.com/mavek87/smart-actions-gui"))
-                .authors(Some(vec![String::from("Matteo Veroni")]))
+                .name(Some(APP_NAME.to_string()))
+                .version(Some(APP_VERSION.to_string()))
+                .website_label(Some(WEBSITE_LABEL.to_string()))
+                .website(Some(WEBSITE.to_string()))
+                .authors(Some(AUTHORS.iter().map(|&s| s.to_string()).collect()))
                 .build();
+
+            let audio_sub_item_enabled = CheckMenuItemBuilder::with_id("audio_enabled", "Enabled")
+                .checked(true)
+                .build(app)?;
+
+            let audio_submenu = SubmenuBuilder::new(app, "Audio")
+                .item(&audio_sub_item_enabled)
+                .build()?;
 
             let help_submenu = SubmenuBuilder::new(app, "Help")
                 .about(Some(about_metadata))
@@ -93,6 +108,7 @@ pub fn run() {
                 .items(&[&start_action_menu_item, &stop_action_menu_item])
                 .separator()
                 .item(&language_submenu)
+                .item(&audio_submenu)
                 .separator()
                 .item(&help_submenu)
                 .separator()
@@ -130,8 +146,14 @@ pub fn run() {
                         lang_sub_item_en
                             .set_checked(event.id().0.as_str() == "en")
                             .expect("Change check error");
-                        lang_sub_item_it
+                        audio_sub_item_enabled
                             .set_checked(event.id().0.as_str() == "it")
+                            .expect("Change check error");
+                    }
+                    "audio_enabled" => {
+                        // TODO: fix bug
+                        audio_sub_item_enabled
+                            .set_checked(event.id().0.as_str() == "audio_enabled")
                             .expect("Change check error");
                     }
                     _ => {
@@ -143,7 +165,52 @@ pub fn run() {
 
             let tray_icon_manager = TrayIconManager::new(tray_icon.clone());
             tray_icon_manager.set_default_icon();
-            // tray_icon_manager.clone().set_default_icon();
+
+            #[cfg(desktop)]
+            {
+                use tauri_plugin_global_shortcut::{Code, Modifiers, ShortcutState};
+
+                app.handle().plugin(
+                    tauri_plugin_global_shortcut::Builder::new()
+                        .with_shortcuts(["alt+s", "alt+h"])?
+                        .with_handler(|app, shortcut, event| {
+                            if event.state == ShortcutState::Pressed {
+                                if shortcut.matches(Modifiers::ALT, Code::KeyS) {
+                                    println!("ALT+S Pressed! - start smart ");
+
+                                    // ffplay -v 0 -nodisp -autoexit dictate-text-on.mp3
+                                    Command::new("ffplay")
+                                        .arg("-v")
+                                        .arg("0")
+                                        .arg("-nodisp")
+                                        .arg("-autoexit")
+                                        .arg("sounds/dictate-text-on.mp3")
+                                        .spawn()
+                                        .expect("Failed to start 'dictate-text-on.mp3'");
+
+                                    let app_state: State<AppState> = app.state();
+                                    app_state.smart_action_manager.start_current_smart_action();
+                                } else if shortcut.matches(Modifiers::ALT, Code::KeyH) {
+                                    println!("ALT+H Pressed!");
+
+                                    // ffplay -v 0 -nodisp -autoexit dictate-text-off.mp3
+                                    Command::new("ffplay")
+                                        .arg("-v")
+                                        .arg("0")
+                                        .arg("-nodisp")
+                                        .arg("-autoexit")
+                                        .arg("sounds/dictate-text-off.mp3")
+                                        .spawn()
+                                        .expect("Failed to start 'dictate-text-off.mp3'");
+
+                                    let app_state: State<AppState> = app.state();
+                                    app_state.smart_action_manager.stop_current_smart_action();
+                                }
+                            }
+                        })
+                        .build(),
+                )?;
+            }
 
             let arg_default_audio_device: HashMap<String, String> = HashMap::from([
                 ("arg".to_string(), "-a".to_string()),
@@ -194,31 +261,6 @@ pub fn run() {
             };
 
             app.manage(app_state);
-
-            // TODO: refactoring needed
-            #[cfg(desktop)]
-            {
-                use tauri_plugin_global_shortcut::{Code, Modifiers, ShortcutState};
-
-                app.handle().plugin(
-                    tauri_plugin_global_shortcut::Builder::new()
-                        .with_shortcuts(["alt+s", "alt+h"])?
-                        .with_handler(|app, shortcut, event| {
-                            if event.state == ShortcutState::Pressed {
-                                if shortcut.matches(Modifiers::ALT, Code::KeyS) {
-                                    println!("ALT+S Pressed! - start smart ");
-                                    let app_state: State<AppState> = app.state();
-                                    app_state.smart_action_manager.start_current_smart_action();
-                                } else if shortcut.matches(Modifiers::ALT, Code::KeyH) {
-                                    println!("ALT+H Pressed!");
-                                    let app_state: State<AppState> = app.state();
-                                    app_state.smart_action_manager.stop_current_smart_action();
-                                }
-                            }
-                        })
-                        .build(),
-                )?;
-            }
 
             Ok(())
         })

@@ -53,13 +53,24 @@ impl SmartActionManager {
 
         // TODO: unlock if error occurs
         self.menu_manager.lock().unwrap().set_action_started();
-
         self.tray_icon_manager.lock().unwrap().set_recording_icon();
 
         let smart_action_state = self.smart_action_state.lock().unwrap();
 
         let current_smart_action_value = smart_action_state.value.lock().unwrap();
         let current_smart_action_args = smart_action_state.args.lock().unwrap();
+
+        // TODO: use a manager to check if audio is enabled
+        // ffplay -v 0 -nodisp -autoexit dictate-text-on.mp3
+        Command::new("ffplay")
+            .arg("-v")
+            .arg("0")
+            .arg("-nodisp")
+            .arg("-autoexit")
+            .arg(format!("sounds/{}_on.mp3", current_smart_action_value))
+            .spawn()
+            .expect(&format!("Failed to start '{}_on.mp3'", current_smart_action_value));
+        println!("run sound: sounds/{}_on.mp3", current_smart_action_value);
 
         // if self.process_start.lock().unwrap().is_none() {
         let mut command_smart_action = Command::new("bash");
@@ -102,6 +113,9 @@ impl SmartActionManager {
 
         let tray_icon_manager = self.tray_icon_manager.lock().unwrap().clone();
 
+
+        let x = Arc::new(Mutex::new(current_smart_action_value.clone()));
+
         thread::spawn(move || {
             let app_handle = app_handle.lock().unwrap();
 
@@ -131,6 +145,20 @@ impl SmartActionManager {
             }
 
             tray_icon_manager.set_default_icon();
+
+            let current_smart_action_value = x.lock().unwrap();
+
+            // TODO: use a manager to check if audio is enabled
+            // ffplay -v 0 -nodisp -autoexit dictate-text-on.mp3
+            Command::new("ffplay")
+                .arg("-v")
+                .arg("0")
+                .arg("-nodisp")
+                .arg("-autoexit")
+                .arg(format!("sounds/{}_off.mp3", current_smart_action_value))
+                .spawn()
+                .expect(&format!("Failed to start '{}_off.mp3'", current_smart_action_value));
+            println!("run sound: sounds/{}_off.mp3", current_smart_action_value);
         });
 
         // let id = process_command_smart_action.id();
