@@ -172,7 +172,7 @@ pub fn run() {
 
                 app.handle().plugin(
                     tauri_plugin_global_shortcut::Builder::new()
-                        .with_shortcuts(["alt+s", "alt+h", "alt+n", "alt+b"])?
+                        .with_shortcuts(["alt+s", "alt+a", "alt+n", "alt+b"])?
                         .with_handler(|app, shortcut, event| {
                             if event.state == ShortcutState::Pressed {
                                 if shortcut.matches(Modifiers::ALT, Code::KeyS) {
