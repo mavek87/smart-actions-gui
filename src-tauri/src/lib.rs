@@ -190,7 +190,7 @@ pub fn run() {
                                 } else if shortcut.matches(Modifiers::ALT, Code::KeyB) {
                                     println!("ALT+B Pressed! - change with previous smart action");
                                     let app_state: State<AppState> = app.state();
-                                    app_state.smart_action_manager.change_with_next_smart_action();
+                                    app_state.smart_action_manager.change_with_previous_smart_action();
                                 }
                             }
                         })
