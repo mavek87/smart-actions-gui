@@ -172,19 +172,23 @@ pub fn run() {
 
                 app.handle().plugin(
                     tauri_plugin_global_shortcut::Builder::new()
-                        .with_shortcuts(["alt+s", "alt+h", "alt+n"])?
+                        .with_shortcuts(["alt+s", "alt+h", "alt+n", "alt+b"])?
                         .with_handler(|app, shortcut, event| {
                             if event.state == ShortcutState::Pressed {
                                 if shortcut.matches(Modifiers::ALT, Code::KeyS) {
                                     println!("ALT+S Pressed! - start smart action");
                                     let app_state: State<AppState> = app.state();
                                     app_state.smart_action_manager.start_current_smart_action();
-                                } else if shortcut.matches(Modifiers::ALT, Code::KeyH) {
-                                    println!("ALT+H Pressed! - stop smart action");
+                                } else if shortcut.matches(Modifiers::ALT, Code::KeyA) {
+                                    println!("ALT+A Pressed! - stop smart action");
                                     let app_state: State<AppState> = app.state();
                                     app_state.smart_action_manager.stop_current_smart_action();
                                 } else if shortcut.matches(Modifiers::ALT, Code::KeyN) {
                                     println!("ALT+N Pressed! - change with next smart action");
+                                    let app_state: State<AppState> = app.state();
+                                    app_state.smart_action_manager.change_with_next_smart_action();
+                                } else if shortcut.matches(Modifiers::ALT, Code::KeyB) {
+                                    println!("ALT+B Pressed! - change with previous smart action");
                                     let app_state: State<AppState> = app.state();
                                     app_state.smart_action_manager.change_with_next_smart_action();
                                 }

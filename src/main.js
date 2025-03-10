@@ -51,6 +51,10 @@ window.addEventListener("DOMContentLoaded", async () => {
         listen('request_to_ui_next_smart_action', event => {
             console.log('request_to_ui_next_smart_action - Event received:', event.payload);
             selectNextAction();
+        });
+        listen('request_to_ui_previous_smart_action', event => {
+            console.log('request_to_ui_previous_smart_action - Event received:', event.payload);
+            selectPreviousAction();
         })
         listen('smart_action_recording_start', (event) => {
             console.log('Event received:', event.payload);
@@ -119,11 +123,21 @@ function notify_change_smart_action_to_tauri() {
 function selectNextAction() {
     const optionsCount = select_action.options.length;
     const selectedIndex = select_action.selectedIndex;
-
-    if (selectedIndex <= (optionsCount - 1)) {
+    if (selectedIndex < (optionsCount - 1)) {
         select_action.selectedIndex = selectedIndex + 1;
     } else {
         select_action.selectedIndex = 0;
+    }
+    select_action.dispatchEvent(new Event('change'));
+}
+
+function selectPreviousAction() {
+    const optionsCount = select_action.options.length;
+    const selectedIndex = select_action.selectedIndex;
+    if (selectedIndex > 0) {
+        select_action.selectedIndex = selectedIndex - 1;
+    } else {
+        select_action.selectedIndex = optionsCount - 1;
     }
     select_action.dispatchEvent(new Event('change'));
 }

@@ -46,6 +46,12 @@ impl SmartActionManager {
             .unwrap()
     }
 
+    pub fn change_with_previous_smart_action(&self) {
+        self.app_handle
+            .emit("request_to_ui_previous_smart_action", "")
+            .unwrap()
+    }
+
     pub fn change_current_smart_action(&self, new_smart_action: SmartAction) {
         let new_smart_action_clone = new_smart_action.clone();
         let smart_action_value = new_smart_action_clone.value;
