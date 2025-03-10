@@ -1,6 +1,14 @@
 use std::process::Command;
 use crate::domain::smart_action::SmartActionStatus;
 
+//
+// Tool used to generate voices:
+//
+// https://ttsmp3.com/
+//
+// US English / Sally
+//
+
 #[derive(Clone)]
 pub struct AudioPlayerManager {
     is_audio_enabled: bool,

@@ -23,8 +23,9 @@ use commands::{
 use domain::{app_state::AppState, smart_action::SmartAction};
 
 use logic::{
-    config_manager::ConfigManager, menu_manager::MenuManager, audio_player_manager::AudioPlayerManager,
-    smart_action_manager::SmartActionManager, tray_icon_manager::TrayIconManager,
+    audio_player_manager::AudioPlayerManager, config_manager::ConfigManager,
+    menu_manager::MenuManager, smart_action_manager::SmartActionManager,
+    tray_icon_manager::TrayIconManager,
 };
 
 const CONFIG_FILE: &str = "assets/config.json";
@@ -171,7 +172,7 @@ pub fn run() {
 
                 app.handle().plugin(
                     tauri_plugin_global_shortcut::Builder::new()
-                        .with_shortcuts(["alt+s", "alt+h"])?
+                        .with_shortcuts(["alt+s", "alt+h", "alt+n"])?
                         .with_handler(|app, shortcut, event| {
                             if event.state == ShortcutState::Pressed {
                                 if shortcut.matches(Modifiers::ALT, Code::KeyS) {
@@ -182,6 +183,10 @@ pub fn run() {
                                     println!("ALT+H Pressed! - stop smart action");
                                     let app_state: State<AppState> = app.state();
                                     app_state.smart_action_manager.stop_current_smart_action();
+                                } else if shortcut.matches(Modifiers::ALT, Code::KeyN) {
+                                    println!("ALT+N Pressed! - change with next smart action");
+                                    let app_state: State<AppState> = app.state();
+                                    app_state.smart_action_manager.change_with_next_smart_action();
                                 }
                             }
                         })

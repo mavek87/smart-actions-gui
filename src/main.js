@@ -29,44 +29,6 @@ const button_submitFormAction = document.getElementById("button_submit-form-acti
 const button_submitFormActionStopRecording = document.getElementById("button_submit-form-action-stop-recording");
 const button_submitFormActionWait = document.getElementById("button_submit-form-action_wait");
 
-function listen_smart_action_server_events() {
-    listen('smart_action_recording_start', (event) => {
-        console.log('Event received:', event.payload);
-
-        // recording start
-        button_submitFormAction.setAttribute("hidden", true);
-        button_submitFormActionStopRecording.removeAttribute("hidden");
-        button_submitFormActionWait.textContent = event.payload;
-    });
-    listen('smart_action_waiting_start', (event) => {
-        console.log('Event received:', event.payload);
-
-        // loading start
-        button_submitFormAction.setAttribute("hidden", true);
-        button_submitFormActionStopRecording.setAttribute("hidden", true);
-        button_submitFormActionWait.removeAttribute("hidden");
-        button_submitFormActionWait.textContent = event.payload;
-    });
-    listen('smart_action_waiting_stop', (event) => {
-        console.log('Event received:', event.payload);
-
-        // loading stop
-        button_submitFormAction.removeAttribute("hidden");
-        button_submitFormActionStopRecording.setAttribute("hidden", true);
-        button_submitFormActionWait.setAttribute("hidden", true);
-    });
-    listen('smart_action_waiting_error', (event) => {
-        console.log('Event received:', event.payload);
-
-        // TODO: handle the error
-
-        // loading stop
-        button_submitFormAction.removeAttribute("hidden");
-        button_submitFormActionStopRecording.setAttribute("hidden", true);
-        button_submitFormActionWait.setAttribute("hidden", true);
-    });
-}
-
 select_action.addEventListener('change', function () {
     populateViewForAction();
     notify_change_smart_action_to_tauri();
@@ -85,6 +47,48 @@ button_submitFormActionStopRecording.addEventListener('click', async function (e
 });
 
 window.addEventListener("DOMContentLoaded", async () => {
+    function listen_smart_action_server_events() {
+        listen('request_to_ui_next_smart_action', event => {
+            console.log('request_to_ui_next_smart_action - Event received:', event.payload);
+            selectNextAction();
+        })
+        listen('smart_action_recording_start', (event) => {
+            console.log('Event received:', event.payload);
+
+            // recording start
+            button_submitFormAction.setAttribute("hidden", true);
+            button_submitFormActionStopRecording.removeAttribute("hidden");
+            button_submitFormActionWait.textContent = event.payload;
+        });
+        listen('smart_action_waiting_start', (event) => {
+            console.log('Event received:', event.payload);
+
+            // loading start
+            button_submitFormAction.setAttribute("hidden", true);
+            button_submitFormActionStopRecording.setAttribute("hidden", true);
+            button_submitFormActionWait.removeAttribute("hidden");
+            button_submitFormActionWait.textContent = event.payload;
+        });
+        listen('smart_action_waiting_stop', (event) => {
+            console.log('Event received:', event.payload);
+
+            // loading stop
+            button_submitFormAction.removeAttribute("hidden");
+            button_submitFormActionStopRecording.setAttribute("hidden", true);
+            button_submitFormActionWait.setAttribute("hidden", true);
+        });
+        listen('smart_action_waiting_error', (event) => {
+            console.log('Event received:', event.payload);
+
+            // TODO: handle the error
+
+            // loading stop
+            button_submitFormAction.removeAttribute("hidden");
+            button_submitFormActionStopRecording.setAttribute("hidden", true);
+            button_submitFormActionWait.setAttribute("hidden", true);
+        });
+    }
+
     listen_smart_action_server_events();
 
     const jsonActions = await ui_notify_startup();
@@ -110,6 +114,18 @@ window.addEventListener("DOMContentLoaded", async () => {
 
 function notify_change_smart_action_to_tauri() {
     ui_notify_change_action(extractSmartActionJsonFromForm());
+}
+
+function selectNextAction() {
+    const optionsCount = select_action.options.length;
+    const selectedIndex = select_action.selectedIndex;
+
+    if (selectedIndex <= (optionsCount - 1)) {
+        select_action.selectedIndex = selectedIndex + 1;
+    } else {
+        select_action.selectedIndex = 0;
+    }
+    select_action.dispatchEvent(new Event('change'));
 }
 
 function extractSmartActionJsonFromForm() {

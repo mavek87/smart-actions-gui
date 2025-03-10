@@ -40,11 +40,26 @@ impl SmartActionManager {
         }
     }
 
-    pub fn change_current_smart_action(&self, new_smart_action: SmartAction) {
-        let mut current_smart_action = self.smart_action_state.lock().unwrap();
-        *current_smart_action = SmartActionState::new(new_smart_action.clone());
+    pub fn change_with_next_smart_action(&self) {
+        self.app_handle
+            .emit("request_to_ui_next_smart_action", "")
+            .unwrap()
+    }
 
-        let action_name = format!("{}", new_smart_action.name);
+    pub fn change_current_smart_action(&self, new_smart_action: SmartAction) {
+        let new_smart_action_clone = new_smart_action.clone();
+        let smart_action_value = new_smart_action_clone.value;
+        let smart_action_name = new_smart_action_clone.name;
+
+        self.audio_player_manager
+            .lock()
+            .unwrap()
+            .play_sound_for_smart_action(smart_action_value, SmartActionStatus::SELECTED);
+
+        let mut current_smart_action = self.smart_action_state.lock().unwrap();
+        *current_smart_action = SmartActionState::new(new_smart_action);
+
+        let action_name = format!("{}", smart_action_name);
         self.menu_manager
             .lock()
             .unwrap()
