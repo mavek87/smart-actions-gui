@@ -214,35 +214,4 @@ impl SmartActionManager {
             println!("Recording already stopping.");
         }
     }
-
-    // #[tauri::command]
-    // fn run_child_process(app_handle: tauri::AppHandle) {
-    //     let (tx, rx) = mpsc::channel();
-    //
-    //     thread::spawn(move || {
-    //         let status: ExitStatus = Command::new("ls") // Cambia con il tuo comando
-    //             .arg("-l")
-    //             .status()
-    //             .expect("Errore nell'avvio del processo");
-    //
-    //         // Invia il risultato tramite il canale
-    //         let _ = tx.send(status);
-    //     });
-    //
-    //     // Ascolta il risultato nel thread principale senza bloccare
-    //     thread::spawn(move || {
-    //         if let Ok(status) = rx.recv() {
-    //             if status.success() {
-    //                 println!("Il processo è terminato con successo!");
-    //                 app_handle.emit("process-success", {}).unwrap();
-    //             } else if let Some(code) = status.code() {
-    //                 println!("Il processo è terminato con codice di errore: {}", code);
-    //                 app_handle.emit("process-failed", code).unwrap();
-    //             } else {
-    //                 println!("Il processo è terminato in modo anomalo.");
-    //                 app_handle.emit("process-failed", "unknown").unwrap();
-    //             }
-    //         }
-    //     });
-    // }
 }
