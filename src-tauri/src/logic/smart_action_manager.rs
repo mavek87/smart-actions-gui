@@ -57,13 +57,10 @@ impl SmartActionManager {
         let smart_action_value = new_smart_action_clone.value;
         let smart_action_name = new_smart_action_clone.name;
 
-        // self.smart_action_state.lock().unwrap().status =
-        //     Arc::new(Mutex::new(SmartActionStatus::SELECTED));
-
         self.audio_player_manager
             .lock()
             .unwrap()
-            .play_sound_for_smart_action(smart_action_value.clone(), SmartActionStatus::SELECTED);
+            .play_sound_for_smart_action(smart_action_value.clone(), None);
 
         let mut current_smart_action = self.smart_action_state.lock().unwrap();
         *current_smart_action = SmartActionState::new(new_smart_action);
@@ -87,13 +84,14 @@ impl SmartActionManager {
         let current_smart_action_value = smart_action_state.value.lock().unwrap();
         let current_smart_action_args = smart_action_state.args.lock().unwrap();
 
+        // TODO: change the internal state to recording????
         // self.smart_action_state.lock().unwrap().status =
         //     Arc::new(Mutex::new(SmartActionStatus::RECORDING));
 
         let mut audio_player_manager = self.audio_player_manager.lock().unwrap();
         audio_player_manager.play_sound_for_smart_action(
             current_smart_action_value.clone(),
-            SmartActionStatus::RECORDING,
+            Some(SmartActionStatus::RECORDING),
         ); // TODO: it depends can be recording or not...
 
         // if self.process_start.lock().unwrap().is_none() {
@@ -138,6 +136,7 @@ impl SmartActionManager {
             Arc::new(Mutex::new(process_command_smart_action));
         let arc_mutex_tray_icon_manager =
             Arc::new(Mutex::new(self.tray_icon_manager.lock().unwrap().clone()));
+        //
         // let arc_mutex_smart_action_state =
         //     Arc::new(Mutex::new(self.smart_action_state.lock().unwrap().clone()));
         let arc_mutex_audio_player_manager = Arc::new(Mutex::new(audio_player_manager.clone()));
@@ -163,11 +162,13 @@ impl SmartActionManager {
                     .emit("smart_action_waiting_stop", "Stop waiting...")
                     .unwrap();
 
-                // smart_action_state.status = Arc::new(Mutex::new(SmartActionStatus::COMPLETED));
+                // TODO: this block the main thread for some reason...
+                // let smart_action_state = arc_mutex_smart_action_state.lock().unwrap();
+                // *smart_action_state.status.lock().unwrap() = SmartActionStatus::COMPLETED;
 
                 audio_player_manager.play_sound_for_smart_action(
                     current_smart_action_value.clone(),
-                    SmartActionStatus::COMPLETED,
+                    Some(SmartActionStatus::COMPLETED),
                 );
             } else if let Some(code) = status.code() {
                 println!("Il processo è terminato con codice di errore: {}", code);
@@ -175,11 +176,13 @@ impl SmartActionManager {
                     .emit("smart_action_waiting_error", "Error during waiting...")
                     .unwrap();
 
-                // smart_action_state.status = Arc::new(Mutex::new(SmartActionStatus::FAILED));
+                // TODO: this block the main thread for some reason...
+                // let smart_action_state = arc_mutex_smart_action_state.lock().unwrap();
+                // *smart_action_state.status.lock().unwrap() = SmartActionStatus::FAILED;
 
                 audio_player_manager.play_sound_for_smart_action(
                     current_smart_action_value.clone(),
-                    SmartActionStatus::FAILED,
+                    Some(SmartActionStatus::FAILED),
                 );
             } else {
                 println!("Il processo è terminato in modo anomalo.");
@@ -187,11 +190,13 @@ impl SmartActionManager {
                     .emit("smart_action_waiting_error", "Error during waiting...")
                     .unwrap();
 
-                // smart_action_state.status = Arc::new(Mutex::new(SmartActionStatus::FAILED));
+                // TODO: this block the main thread for some reason...
+                // let smart_action_state = arc_mutex_smart_action_state.lock().unwrap();
+                // *smart_action_state.status.lock().unwrap() = SmartActionStatus::FAILED;
 
                 audio_player_manager.play_sound_for_smart_action(
                     current_smart_action_value.clone(),
-                    SmartActionStatus::FAILED,
+                    Some(SmartActionStatus::FAILED),
                 );
             }
 
@@ -221,14 +226,14 @@ impl SmartActionManager {
         let current_smart_action_value = current_smart_action_state.value.lock().unwrap();
         let smart_action_status = current_smart_action_state.status.lock().unwrap();
 
-        if *smart_action_status != SmartActionStatus::RECORDING &&
-            *smart_action_status != SmartActionStatus::SELECTED {
-            println!(
-                "Current smart action status is {} so it cannot be stopped",
-                smart_action_status
-            );
-            return;
-        }
+        // TODO: this is very complicated to do (handle the state is very hard!)
+        // if *smart_action_status != SmartActionStatus::RECORDING {
+        //     println!(
+        //         "Current smart action status is {} so it cannot be stopped",
+        //         smart_action_status
+        //     );
+        //     return;
+        // }
 
         self.menu_manager.lock().unwrap().set_action_stopped(); // TODO: unlock if error occurs (???)
         self.tray_icon_manager.lock().unwrap().set_waiting_icon();
@@ -236,7 +241,7 @@ impl SmartActionManager {
         let mut audio_player_manager = self.audio_player_manager.lock().unwrap();
         audio_player_manager.play_sound_for_smart_action(
             current_smart_action_value.clone(),
-            SmartActionStatus::WAITING,
+            Some(SmartActionStatus::WAITING),
         );
 
         self.app_handle

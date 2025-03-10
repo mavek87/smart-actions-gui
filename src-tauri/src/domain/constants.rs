@@ -4,3 +4,4 @@ pub static WEBSITE_LABEL: &str = "Github Repository";
 pub static WEBSITE: &str = "https://github.com/mavek87/smart-actions-gui";
 pub static AUTHORS: &[&str] = &["Matteo Veroni"];
 pub static DEFAULT_CONFIG_FILE: &str = "assets/config.json";
+pub static AUDIO_FOLDER: &str = "audio";

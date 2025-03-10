@@ -29,14 +29,15 @@ impl SmartActionState {
             value: Arc::new(Mutex::new(smart_action.value)),
             description: Arc::new(Mutex::new(smart_action.description)),
             args: Arc::new(Mutex::new(smart_action.args)),
-            status: Arc::new(Mutex::new(SmartActionStatus::SELECTED)),
+            status: Arc::new(Mutex::new(SmartActionStatus::NONE)),
         }
     }
 }
 
+// TODO: this states need to be reworked (none is used only at the beginning at the moment..., how to go back to none? selected is missing? etc...)
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub enum SmartActionStatus {
-    SELECTED,
+    NONE,
     RECORDING,
     WAITING,
     COMPLETED,
@@ -46,7 +47,7 @@ pub enum SmartActionStatus {
 impl SmartActionStatus {
     pub fn value(&self) -> &'static str {
         match self {
-            SmartActionStatus::SELECTED => "selected",
+            SmartActionStatus::NONE => "none",
             SmartActionStatus::RECORDING => "recording",
             SmartActionStatus::WAITING => "waiting",
             SmartActionStatus::COMPLETED => "completed",
