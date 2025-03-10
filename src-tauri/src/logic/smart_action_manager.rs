@@ -57,10 +57,13 @@ impl SmartActionManager {
         let smart_action_value = new_smart_action_clone.value;
         let smart_action_name = new_smart_action_clone.name;
 
+        // self.smart_action_state.lock().unwrap().status =
+        //     Arc::new(Mutex::new(SmartActionStatus::SELECTED));
+
         self.audio_player_manager
             .lock()
             .unwrap()
-            .play_sound_for_smart_action(smart_action_value, SmartActionStatus::SELECTED);
+            .play_sound_for_smart_action(smart_action_value.clone(), SmartActionStatus::SELECTED);
 
         let mut current_smart_action = self.smart_action_state.lock().unwrap();
         *current_smart_action = SmartActionState::new(new_smart_action);
@@ -83,6 +86,9 @@ impl SmartActionManager {
         let smart_action_state = self.smart_action_state.lock().unwrap();
         let current_smart_action_value = smart_action_state.value.lock().unwrap();
         let current_smart_action_args = smart_action_state.args.lock().unwrap();
+
+        // self.smart_action_state.lock().unwrap().status =
+        //     Arc::new(Mutex::new(SmartActionStatus::RECORDING));
 
         let mut audio_player_manager = self.audio_player_manager.lock().unwrap();
         audio_player_manager.play_sound_for_smart_action(
@@ -132,6 +138,8 @@ impl SmartActionManager {
             Arc::new(Mutex::new(process_command_smart_action));
         let arc_mutex_tray_icon_manager =
             Arc::new(Mutex::new(self.tray_icon_manager.lock().unwrap().clone()));
+        // let arc_mutex_smart_action_state =
+        //     Arc::new(Mutex::new(self.smart_action_state.lock().unwrap().clone()));
         let arc_mutex_audio_player_manager = Arc::new(Mutex::new(audio_player_manager.clone()));
         let arc_mutex_current_smart_action_value =
             Arc::new(Mutex::new(current_smart_action_value.clone()));
@@ -145,6 +153,7 @@ impl SmartActionManager {
                 .wait()
                 .expect("Errore nel wait del processo");
 
+            // let mut smart_action_state = arc_mutex_smart_action_state.lock().unwrap();
             let current_smart_action_value = arc_mutex_current_smart_action_value.lock().unwrap();
             let mut audio_player_manager = arc_mutex_audio_player_manager.lock().unwrap();
 
@@ -153,6 +162,8 @@ impl SmartActionManager {
                 app_handle
                     .emit("smart_action_waiting_stop", "Stop waiting...")
                     .unwrap();
+
+                // smart_action_state.status = Arc::new(Mutex::new(SmartActionStatus::COMPLETED));
 
                 audio_player_manager.play_sound_for_smart_action(
                     current_smart_action_value.clone(),
@@ -164,6 +175,8 @@ impl SmartActionManager {
                     .emit("smart_action_waiting_error", "Error during waiting...")
                     .unwrap();
 
+                // smart_action_state.status = Arc::new(Mutex::new(SmartActionStatus::FAILED));
+
                 audio_player_manager.play_sound_for_smart_action(
                     current_smart_action_value.clone(),
                     SmartActionStatus::FAILED,
@@ -173,6 +186,8 @@ impl SmartActionManager {
                 app_handle
                     .emit("smart_action_waiting_error", "Error during waiting...")
                     .unwrap();
+
+                // smart_action_state.status = Arc::new(Mutex::new(SmartActionStatus::FAILED));
 
                 audio_player_manager.play_sound_for_smart_action(
                     current_smart_action_value.clone(),
@@ -206,7 +221,8 @@ impl SmartActionManager {
         let current_smart_action_value = current_smart_action_state.value.lock().unwrap();
         let smart_action_status = current_smart_action_state.status.lock().unwrap();
 
-        if *smart_action_status != SmartActionStatus::RECORDING {
+        if *smart_action_status != SmartActionStatus::RECORDING &&
+            *smart_action_status != SmartActionStatus::SELECTED {
             println!(
                 "Current smart action status is {} so it cannot be stopped",
                 smart_action_status

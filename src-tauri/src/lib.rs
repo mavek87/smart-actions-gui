@@ -22,15 +22,17 @@ use commands::{
 
 use domain::{
     app_state::AppState,
-    smart_action::{SmartAction, SmartActionStatus},
+    smart_action::SmartAction,
 };
 
+use crate::domain::constants::{
+    APP_NAME, APP_VERSION, AUTHORS, DEFAULT_CONFIG_FILE, WEBSITE, WEBSITE_LABEL,
+};
 use logic::{
     audio_player_manager::AudioPlayerManager, config_manager::ConfigManager,
     menu_manager::MenuManager, smart_action_manager::SmartActionManager,
     tray_icon_manager::TrayIconManager,
 };
-use crate::domain::constants::{APP_NAME, APP_VERSION, AUTHORS, DEFAULT_CONFIG_FILE, WEBSITE, WEBSITE_LABEL};
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -240,7 +242,6 @@ pub fn run() {
                     arg_default_output_format,
                     arg_default_output_terminator,
                 ],
-                status: SmartActionStatus::SELECTED,
             };
 
             let app_state = AppState {

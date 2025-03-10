@@ -10,10 +10,10 @@ pub struct SmartAction {
     pub value: String,
     pub description: String,
     pub args: Vec<HashMap<String, String>>,
-    pub status: SmartActionStatus,
 }
 
 #[allow(dead_code)]
+#[derive(Debug, Clone)]
 pub struct SmartActionState {
     pub name: Arc<Mutex<String>>, // TODO: remove this field and allow(dead_code) if not used
     pub value: Arc<Mutex<String>>,
@@ -29,12 +29,12 @@ impl SmartActionState {
             value: Arc::new(Mutex::new(smart_action.value)),
             description: Arc::new(Mutex::new(smart_action.description)),
             args: Arc::new(Mutex::new(smart_action.args)),
-            status: Arc::new(Mutex::new(smart_action.status)),
+            status: Arc::new(Mutex::new(SmartActionStatus::SELECTED)),
         }
     }
 }
 
-#[derive(Debug, Clone,PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub enum SmartActionStatus {
     SELECTED,
     RECORDING,
