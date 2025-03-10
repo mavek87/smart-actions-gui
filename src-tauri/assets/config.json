@@ -1,4 +1,5 @@
 {
-  "faster_whisper_folder": "/opt/FasterWhisper",
+  "smart_actions_folder": "/opt/FasterWhisper",
+  "smart_actions_executable": "smart-actions.sh",
   "faster_whisper_model": "medium"
 }

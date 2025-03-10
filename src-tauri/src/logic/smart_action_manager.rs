@@ -74,20 +74,21 @@ impl SmartActionManager {
 
     // TODO: handle errors
     pub fn start_current_smart_action(&self) {
-        // let (tx, rx) = mpsc::channel();
+        // TODO: check if the smart action status consent to start
 
         // TODO: unlock if error occurs
         self.menu_manager.lock().unwrap().set_action_started();
         self.tray_icon_manager.lock().unwrap().set_recording_icon();
 
         let smart_action_state = self.smart_action_state.lock().unwrap();
-
         let current_smart_action_value = smart_action_state.value.lock().unwrap();
         let current_smart_action_args = smart_action_state.args.lock().unwrap();
 
         let mut audio_player_manager = self.audio_player_manager.lock().unwrap();
-        audio_player_manager
-            .play_sound_for_smart_action(current_smart_action_value.clone(), SmartActionStatus::ON);
+        audio_player_manager.play_sound_for_smart_action(
+            current_smart_action_value.clone(),
+            SmartActionStatus::RECORDING,
+        ); // TODO: it depends can be recording or not...
 
         // if self.process_start.lock().unwrap().is_none() {
         let mut command_smart_action = Command::new("bash");
@@ -95,7 +96,7 @@ impl SmartActionManager {
         command_smart_action
             .arg(format!(
                 "{}/smart-actions.sh",
-                self.app_config.faster_whisper_folder
+                self.app_config.smart_actions_folder
             ))
             .arg(format!("{}", current_smart_action_value));
 
@@ -121,9 +122,10 @@ impl SmartActionManager {
             }
         }
 
-        let process_command_smart_action = command_smart_action
-            .spawn()
-            .expect("Failed to start 'dictate_text' action from smart-actions.sh"); // TODO: remove hardcoded value
+        let process_command_smart_action = command_smart_action.spawn().expect(&format!(
+            "Failed to start '{} smart action",
+            current_smart_action_value
+        ));
 
         let arc_mutex_app_handle = Arc::new(Mutex::new(self.app_handle.clone()));
         let arc_mutex_process_command_smart_action =
@@ -143,36 +145,45 @@ impl SmartActionManager {
                 .wait()
                 .expect("Errore nel wait del processo");
 
+            let current_smart_action_value = arc_mutex_current_smart_action_value.lock().unwrap();
+            let mut audio_player_manager = arc_mutex_audio_player_manager.lock().unwrap();
+
             if status.success() {
                 println!("Il processo è terminato con successo!");
                 app_handle
                     .emit("smart_action_waiting_stop", "Stop waiting...")
                     .unwrap();
+
+                audio_player_manager.play_sound_for_smart_action(
+                    current_smart_action_value.clone(),
+                    SmartActionStatus::COMPLETED,
+                );
             } else if let Some(code) = status.code() {
                 println!("Il processo è terminato con codice di errore: {}", code);
                 app_handle
                     .emit("smart_action_waiting_error", "Error during waiting...")
                     .unwrap();
+
+                audio_player_manager.play_sound_for_smart_action(
+                    current_smart_action_value.clone(),
+                    SmartActionStatus::FAILED,
+                );
             } else {
                 println!("Il processo è terminato in modo anomalo.");
                 app_handle
                     .emit("smart_action_waiting_error", "Error during waiting...")
                     .unwrap();
+
+                audio_player_manager.play_sound_for_smart_action(
+                    current_smart_action_value.clone(),
+                    SmartActionStatus::FAILED,
+                );
             }
 
             arc_mutex_tray_icon_manager
                 .lock()
                 .unwrap()
                 .set_default_icon();
-
-            let current_smart_action_value = arc_mutex_current_smart_action_value.lock().unwrap();
-            arc_mutex_audio_player_manager
-                .lock()
-                .unwrap()
-                .play_sound_for_smart_action(
-                    current_smart_action_value.clone(),
-                    SmartActionStatus::OFF,
-                );
         });
 
         // let id = process_command_smart_action.id();
@@ -191,9 +202,26 @@ impl SmartActionManager {
     }
 
     pub fn stop_current_smart_action(&self) {
-        // TODO: unlock if error occurs (???)
-        self.menu_manager.lock().unwrap().set_action_stopped();
+        let current_smart_action_state = self.smart_action_state.lock().unwrap();
+        let current_smart_action_value = current_smart_action_state.value.lock().unwrap();
+        let smart_action_status = current_smart_action_state.status.lock().unwrap();
+
+        if *smart_action_status != SmartActionStatus::RECORDING {
+            println!(
+                "Current smart action status is {} so it cannot be stopped",
+                smart_action_status
+            );
+            return;
+        }
+
+        self.menu_manager.lock().unwrap().set_action_stopped(); // TODO: unlock if error occurs (???)
         self.tray_icon_manager.lock().unwrap().set_waiting_icon();
+
+        let mut audio_player_manager = self.audio_player_manager.lock().unwrap();
+        audio_player_manager.play_sound_for_smart_action(
+            current_smart_action_value.clone(),
+            SmartActionStatus::WAITING,
+        );
 
         self.app_handle
             .emit("smart_action_waiting_start", "Waiting response...")
@@ -205,7 +233,7 @@ impl SmartActionManager {
             let child = Command::new("bash")
                 .arg(format!(
                     "{}/smart-actions.sh",
-                    self.app_config.faster_whisper_folder
+                    self.app_config.smart_actions_folder
                 ))
                 .arg("end")
                 .spawn()

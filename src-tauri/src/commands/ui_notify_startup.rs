@@ -1,19 +1,29 @@
 use crate::domain::actions_metadata::ActionsMetadata;
+use crate::domain::app_state::AppState;
 use crate::logic::action_config_parser::ActionConfigParser;
 use std::io::Read;
 use std::process::{Command, Stdio};
-use tauri::command;
+use tauri::{command, State};
+use crate::domain::constants::DEFAULT_CONFIG_FILE;
 
 #[command]
-pub fn ui_notify_startup() -> String {
+pub fn ui_notify_startup(state: State<AppState>) -> String {
     let action_names: [&str; 3] = ["dictate_text", "ai_reply_text", "audio_to_text"];
 
     let mut actions_metadata = ActionsMetadata::new();
 
+    let config_manager = state.config_manager.lock().unwrap();
+
+    let config = config_manager
+        .read_config(DEFAULT_CONFIG_FILE.to_string())
+        .unwrap();
+
     for action_name in &action_names {
-        // TODO 1: find a way to use config
         let action_output = Command::new("bash")
-            .arg("/opt/FasterWhisper/smart-actions.sh") // Nessun bisogno di `format!()`
+            .arg(format!(
+                "{}/{}",
+                config.smart_actions_folder, config.smart_actions_executable
+            )) // Nessun bisogno di `format!()`
             .arg(action_name)
             .arg("--print-config")
             .stdout(Stdio::piped())

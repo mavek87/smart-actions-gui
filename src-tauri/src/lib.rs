@@ -20,26 +20,25 @@ use commands::{
     ui_request_stop_action::ui_request_stop_action,
 };
 
-use domain::{app_state::AppState, smart_action::SmartAction};
+use domain::{
+    app_state::AppState,
+    smart_action::{SmartAction, SmartActionStatus},
+};
 
 use logic::{
     audio_player_manager::AudioPlayerManager, config_manager::ConfigManager,
     menu_manager::MenuManager, smart_action_manager::SmartActionManager,
     tray_icon_manager::TrayIconManager,
 };
-
-const CONFIG_FILE: &str = "assets/config.json";
-const APP_NAME: &str = "smart-actions-gui";
-const APP_VERSION: &str = "0.1.0";
-const WEBSITE_LABEL: &str = "Github Repository";
-const WEBSITE: &str = "https://github.com/mavek87/smart-actions-gui";
-const AUTHORS: &[&str] = &["Matteo Veroni"];
+use crate::domain::constants::{APP_NAME, APP_VERSION, AUTHORS, DEFAULT_CONFIG_FILE, WEBSITE, WEBSITE_LABEL};
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     let config_manager: ConfigManager = ConfigManager::new();
 
-    let app_config = config_manager.read_config(CONFIG_FILE.to_string()).unwrap();
+    let app_config = config_manager
+        .read_config(DEFAULT_CONFIG_FILE.to_string())
+        .unwrap();
     println!("app_config: {:?}", app_config);
 
     tauri::Builder::default()
@@ -186,11 +185,15 @@ pub fn run() {
                                 } else if shortcut.matches(Modifiers::ALT, Code::KeyN) {
                                     println!("ALT+N Pressed! - change with next smart action");
                                     let app_state: State<AppState> = app.state();
-                                    app_state.smart_action_manager.change_with_next_smart_action();
+                                    app_state
+                                        .smart_action_manager
+                                        .change_with_next_smart_action();
                                 } else if shortcut.matches(Modifiers::ALT, Code::KeyB) {
                                     println!("ALT+B Pressed! - change with previous smart action");
                                     let app_state: State<AppState> = app.state();
-                                    app_state.smart_action_manager.change_with_previous_smart_action();
+                                    app_state
+                                        .smart_action_manager
+                                        .change_with_previous_smart_action();
                                 }
                             }
                         })
@@ -225,6 +228,21 @@ pub fn run() {
 
             let audio_player_manager = AudioPlayerManager::new(true);
 
+            let default_smart_action = SmartAction {
+                value: String::from("dictate_text"),
+                name: String::from("Dictate Text"),
+                description: String::from("Record an audio and convert it to text."),
+                args: vec![
+                    arg_default_audio_device,
+                    arg_default_audio_sampling_rate,
+                    arg_default_model,
+                    arg_default_task,
+                    arg_default_output_format,
+                    arg_default_output_terminator,
+                ],
+                status: SmartActionStatus::SELECTED,
+            };
+
             let app_state = AppState {
                 smart_action_manager: SmartActionManager::new(
                     app.handle().clone(),
@@ -232,21 +250,10 @@ pub fn run() {
                     menu_manager.clone(),
                     tray_icon_manager.clone(),
                     audio_player_manager.clone(),
-                    SmartAction {
-                        value: String::from("dictate_text"),
-                        name: String::from("Dictate Text"),
-                        description: String::from("Record an audio and convert it to text."),
-                        args: vec![
-                            arg_default_audio_device,
-                            arg_default_audio_sampling_rate,
-                            arg_default_model,
-                            arg_default_task,
-                            arg_default_output_format,
-                            arg_default_output_terminator,
-                        ],
-                    },
+                    default_smart_action,
                 ),
                 tray_icon_manager: Mutex::new(tray_icon_manager.clone()),
+                config_manager: Mutex::new(config_manager),
             };
 
             app.manage(app_state);

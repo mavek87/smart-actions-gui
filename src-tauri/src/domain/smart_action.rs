@@ -10,6 +10,7 @@ pub struct SmartAction {
     pub value: String,
     pub description: String,
     pub args: Vec<HashMap<String, String>>,
+    pub status: SmartActionStatus,
 }
 
 #[allow(dead_code)]
@@ -18,6 +19,7 @@ pub struct SmartActionState {
     pub value: Arc<Mutex<String>>,
     pub description: Arc<Mutex<String>>, // TODO: remove this field and allow(dead_code) if not used
     pub args: Arc<Mutex<Vec<HashMap<String, String>>>>,
+    pub status: Arc<Mutex<SmartActionStatus>>,
 }
 
 impl SmartActionState {
@@ -27,35 +29,34 @@ impl SmartActionState {
             value: Arc::new(Mutex::new(smart_action.value)),
             description: Arc::new(Mutex::new(smart_action.description)),
             args: Arc::new(Mutex::new(smart_action.args)),
+            status: Arc::new(Mutex::new(smart_action.status)),
         }
     }
 }
 
-// TODO: improve the possible statuses (off [completed|failed|not_executed?], running, recording, waiting, etc...)
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone,PartialEq, Eq, Serialize, Deserialize)]
 pub enum SmartActionStatus {
     SELECTED,
-    ON,
-    OFF,
+    RECORDING,
+    WAITING,
+    COMPLETED,
+    FAILED,
 }
 
 impl SmartActionStatus {
     pub fn value(&self) -> &'static str {
         match self {
             SmartActionStatus::SELECTED => "selected",
-            SmartActionStatus::ON => "on",
-            SmartActionStatus::OFF => "off",
+            SmartActionStatus::RECORDING => "recording",
+            SmartActionStatus::WAITING => "waiting",
+            SmartActionStatus::COMPLETED => "completed",
+            SmartActionStatus::FAILED => "failed",
         }
     }
 }
 
 impl Display for SmartActionStatus {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        let valore = match self {
-            SmartActionStatus::SELECTED => "selected",
-            SmartActionStatus::ON => "on",
-            SmartActionStatus::OFF => "off",
-        };
-        write!(f, "{}", valore)
+        write!(f, "{}", self.value())
     }
 }
