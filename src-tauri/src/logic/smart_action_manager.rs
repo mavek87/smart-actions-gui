@@ -60,7 +60,7 @@ impl SmartActionManager {
         self.audio_player_manager
             .lock()
             .unwrap()
-            .play_sound_for_smart_action(smart_action_value.clone(), None);
+            .play_sound_for_smart_action(&smart_action_value, &None);
 
         let mut current_smart_action = self.smart_action_state.lock().unwrap();
         *current_smart_action = SmartActionState::new(new_smart_action);
@@ -90,8 +90,8 @@ impl SmartActionManager {
 
         let mut audio_player_manager = self.audio_player_manager.lock().unwrap();
         audio_player_manager.play_sound_for_smart_action(
-            current_smart_action_value.clone(),
-            Some(SmartActionStatus::RECORDING),
+            &current_smart_action_value,
+            &Some(SmartActionStatus::RECORDING),
         ); // TODO: it depends can be recording or not...
 
         // if self.process_start.lock().unwrap().is_none() {
@@ -167,8 +167,8 @@ impl SmartActionManager {
                 // *smart_action_state.status.lock().unwrap() = SmartActionStatus::COMPLETED;
 
                 audio_player_manager.play_sound_for_smart_action(
-                    current_smart_action_value.clone(),
-                    Some(SmartActionStatus::COMPLETED),
+                    &current_smart_action_value,
+                    &Some(SmartActionStatus::COMPLETED),
                 );
             } else if let Some(code) = status.code() {
                 println!("Il processo è terminato con codice di errore: {}", code);
@@ -181,8 +181,8 @@ impl SmartActionManager {
                 // *smart_action_state.status.lock().unwrap() = SmartActionStatus::FAILED;
 
                 audio_player_manager.play_sound_for_smart_action(
-                    current_smart_action_value.clone(),
-                    Some(SmartActionStatus::FAILED),
+                    &current_smart_action_value,
+                    &Some(SmartActionStatus::FAILED),
                 );
             } else {
                 println!("Il processo è terminato in modo anomalo.");
@@ -195,8 +195,8 @@ impl SmartActionManager {
                 // *smart_action_state.status.lock().unwrap() = SmartActionStatus::FAILED;
 
                 audio_player_manager.play_sound_for_smart_action(
-                    current_smart_action_value.clone(),
-                    Some(SmartActionStatus::FAILED),
+                    &current_smart_action_value,
+                    &Some(SmartActionStatus::FAILED),
                 );
             }
 
@@ -240,8 +240,8 @@ impl SmartActionManager {
 
         let mut audio_player_manager = self.audio_player_manager.lock().unwrap();
         audio_player_manager.play_sound_for_smart_action(
-            current_smart_action_value.clone(),
-            Some(SmartActionStatus::WAITING),
+            &current_smart_action_value,
+            &Some(SmartActionStatus::WAITING),
         );
 
         self.app_handle
