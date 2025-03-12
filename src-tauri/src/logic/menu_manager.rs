@@ -1,6 +1,7 @@
 use std::sync::{Arc, Mutex};
 use tauri::menu::MenuItem;
 use tauri::Wry;
+
 #[derive(Clone)]
 pub struct MenuManager {
     action_name_menu_item: Arc<Mutex<MenuItem<Wry>>>,

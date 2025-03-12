@@ -1,43 +1,38 @@
-use std::string::ToString;
 use tauri::image::Image;
 use tauri::tray::TrayIcon;
 
 #[derive(Clone)]
 pub struct TrayIconManager {
     tray_icon: TrayIcon,
-    default_app_icon_path: String,
-    recording_app_icon_path: String,
-    waiting_app_icon_path: String,
 }
 
-// https://icon-icons.com/icon/chat-dialogue-bubbles-bubble-talk-conversation-green/65972
-// https://icon-icons.com/icon/chat-dialogue-bubbles-bubble-talk-orange/65944
-// https://icon-icons.com/icon/chat-dialogue-bubbles-bubble-talk-blue/65943
-// https://icon-icons.com/icon/chat-dialogue-bubbles-bubble-talk-round/65949
+const DEFAULT_APP_ICON_PATH: &str = "icons/normal.ico";
+const RECORDING_APP_ICON_PATH: &str = "icons/recording.ico";
+const WAITING_APP_ICON_PATH: &str = "icons/waiting.ico";
+
 impl TrayIconManager {
     pub fn new(tray_icon: TrayIcon) -> Self {
-        Self {
-            tray_icon,
-            default_app_icon_path: "icons/normal.ico".to_string(),
-            recording_app_icon_path: "icons/recording.ico".to_string(),
-            waiting_app_icon_path: "icons/waiting.ico".to_string(),
-        }
+        Self { tray_icon }
     }
 
     pub fn show_default_icon(&self) {
-        self.set_icon_from_path(self.default_app_icon_path.clone());
+        self.set_icon_from_path(DEFAULT_APP_ICON_PATH);
     }
 
     pub fn show_recording_icon(&self) {
-        self.set_icon_from_path(self.recording_app_icon_path.clone());
+        self.set_icon_from_path(RECORDING_APP_ICON_PATH);
     }
 
     pub fn show_waiting_icon(&self) {
-        self.set_icon_from_path(self.waiting_app_icon_path.clone());
+        self.set_icon_from_path(WAITING_APP_ICON_PATH);
     }
 
-    fn set_icon_from_path(&self, icon_path: String) {
-        let image = Image::from_path(icon_path).unwrap();
-        self.tray_icon.set_icon(Some(image)).unwrap();
+    fn set_icon_from_path(&self, icon_path: &str) {
+        let image = Image::from_path(icon_path)
+            .expect(format!("Failed to load image from path {}", icon_path).as_str());
+
+        self.tray_icon
+            .set_icon(Some(image))
+            .expect(format!("Failed to set icon from path {}", icon_path).as_str());
     }
 }
