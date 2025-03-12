@@ -15,8 +15,8 @@ pub fn ui_notify_startup(state: State<AppState>) -> String {
     let config_manager = state.config_manager.lock().unwrap();
 
     let config = config_manager
-        .read_config(DEFAULT_CONFIG_FILE.to_string())
-        .unwrap();
+        .read_config(DEFAULT_CONFIG_FILE)
+        .expect(&format!("Error reading config file {}", DEFAULT_CONFIG_FILE));
 
     for action_name in &action_names {
         let action_output = Command::new("bash")

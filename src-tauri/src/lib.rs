@@ -39,8 +39,9 @@ pub fn run() {
     let config_manager: ConfigManager = ConfigManager::new();
 
     let app_config = config_manager
-        .read_config(DEFAULT_CONFIG_FILE.to_string())
-        .unwrap();
+        .read_config(DEFAULT_CONFIG_FILE)
+        .expect(&format!("Error reading config file {}", DEFAULT_CONFIG_FILE));
+
     println!("app_config: {:?}", app_config);
 
     tauri::Builder::default()
