@@ -24,15 +24,15 @@ impl TrayIconManager {
         }
     }
 
-    pub fn set_default_icon(&self) {
+    pub fn show_default_icon(&self) {
         self.set_icon_from_path(self.default_app_icon_path.clone());
     }
 
-    pub fn set_recording_icon(&self) {
+    pub fn show_recording_icon(&self) {
         self.set_icon_from_path(self.recording_app_icon_path.clone());
     }
 
-    pub fn set_waiting_icon(&self) {
+    pub fn show_waiting_icon(&self) {
         self.set_icon_from_path(self.waiting_app_icon_path.clone());
     }
 

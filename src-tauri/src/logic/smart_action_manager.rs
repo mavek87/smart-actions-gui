@@ -54,21 +54,15 @@ impl SmartActionManager {
 
     pub fn change_current_smart_action(&self, new_smart_action: SmartAction) {
         let new_smart_action_clone = new_smart_action.clone();
-        let smart_action_value = new_smart_action_clone.value;
-        let smart_action_name = new_smart_action_clone.name;
-
-        self.audio_player_manager
-            .lock()
-            .unwrap()
-            .play_sound_for_smart_action(&smart_action_value, &None);
+        let smart_action_name_ref = &new_smart_action.name;
 
         let mut current_smart_action = self.smart_action_state.lock().unwrap();
-        *current_smart_action = SmartActionState::new(new_smart_action);
+        *current_smart_action = SmartActionState::new(new_smart_action_clone);
 
         self.menu_manager
             .lock()
             .unwrap()
-            .set_action_name_text(&smart_action_name);
+            .set_action_name_text(&smart_action_name_ref);
     }
 
     // TODO: handle errors
@@ -77,7 +71,7 @@ impl SmartActionManager {
 
         // TODO: unlock if error occurs
         self.menu_manager.lock().unwrap().set_action_started();
-        self.tray_icon_manager.lock().unwrap().set_recording_icon();
+        self.tray_icon_manager.lock().unwrap().show_recording_icon();
 
         let smart_action_state = self.smart_action_state.lock().unwrap();
         let current_smart_action_value = smart_action_state.value.lock().unwrap();
@@ -202,7 +196,7 @@ impl SmartActionManager {
             arc_mutex_tray_icon_manager
                 .lock()
                 .unwrap()
-                .set_default_icon();
+                .show_default_icon();
         });
 
         // let id = process_command_smart_action.id();
@@ -235,7 +229,7 @@ impl SmartActionManager {
         // }
 
         self.menu_manager.lock().unwrap().set_action_stopped(); // TODO: unlock if error occurs (???)
-        self.tray_icon_manager.lock().unwrap().set_waiting_icon();
+        self.tray_icon_manager.lock().unwrap().show_waiting_icon();
 
         let mut audio_player_manager = self.audio_player_manager.lock().unwrap();
         audio_player_manager.play_sound_for_smart_action(

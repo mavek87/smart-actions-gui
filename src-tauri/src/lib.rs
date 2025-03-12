@@ -20,10 +20,7 @@ use commands::{
     ui_request_stop_action::ui_request_stop_action,
 };
 
-use domain::{
-    app_state::AppState,
-    smart_action::SmartAction,
-};
+use domain::{app_state::AppState, smart_action::SmartAction};
 
 use crate::domain::constants::{
     APP_NAME, APP_VERSION, AUTHORS, DEFAULT_CONFIG_FILE, WEBSITE, WEBSITE_LABEL,
@@ -40,7 +37,10 @@ pub fn run() {
 
     let app_config = config_manager
         .read_config(DEFAULT_CONFIG_FILE)
-        .expect(&format!("Error reading config file {}", DEFAULT_CONFIG_FILE));
+        .expect(&format!(
+            "Error reading config file {}",
+            DEFAULT_CONFIG_FILE
+        ));
 
     println!("app_config: {:?}", app_config);
 
@@ -166,7 +166,7 @@ pub fn run() {
                 .build(app)?;
 
             let tray_icon_manager = TrayIconManager::new(tray_icon.clone());
-            tray_icon_manager.set_default_icon();
+            tray_icon_manager.show_default_icon();
 
             #[cfg(desktop)]
             {
@@ -256,6 +256,7 @@ pub fn run() {
                 ),
                 tray_icon_manager: Mutex::new(tray_icon_manager.clone()),
                 config_manager: Mutex::new(config_manager),
+                audio_player_manager: Mutex::new(audio_player_manager),
             };
 
             app.manage(app_state);
