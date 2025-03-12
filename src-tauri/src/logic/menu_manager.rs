@@ -23,7 +23,7 @@ impl MenuManager {
         }
     }
 
-    pub fn set_action_name_text(&mut self, text: String) {
+    pub fn set_action_name_text(&mut self, text: &str) {
         self.action_name_menu_item
             .lock()
             .unwrap()

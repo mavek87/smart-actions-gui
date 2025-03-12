@@ -65,11 +65,10 @@ impl SmartActionManager {
         let mut current_smart_action = self.smart_action_state.lock().unwrap();
         *current_smart_action = SmartActionState::new(new_smart_action);
 
-        let action_name = format!("{}", smart_action_name);
         self.menu_manager
             .lock()
             .unwrap()
-            .set_action_name_text(action_name);
+            .set_action_name_text(&smart_action_name);
     }
 
     // TODO: handle errors
@@ -224,7 +223,7 @@ impl SmartActionManager {
     pub fn stop_current_smart_action(&self) {
         let current_smart_action_state = self.smart_action_state.lock().unwrap();
         let current_smart_action_value = current_smart_action_state.value.lock().unwrap();
-        let smart_action_status = current_smart_action_state.status.lock().unwrap();
+        // let smart_action_status = current_smart_action_state.status.lock().unwrap();
 
         // TODO: this is very complicated to do (handle the state is very hard!)
         // if *smart_action_status != SmartActionStatus::RECORDING {

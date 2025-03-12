@@ -37,7 +37,7 @@ impl TrayIconManager {
     }
 
     fn set_icon_from_path(&self, icon_path: String) {
-        let image = Image::from_path(icon_path.clone()).unwrap();
+        let image = Image::from_path(icon_path).unwrap();
         self.tray_icon.set_icon(Some(image)).unwrap();
     }
 }

@@ -19,9 +19,9 @@ impl AudioPlayerManager {
         Self { is_audio_enabled }
     }
 
-    pub fn set_audio_enabled(&mut self, is_audio_enabled: bool) {
-        self.is_audio_enabled = is_audio_enabled;
-    }
+    // pub fn set_audio_enabled(&mut self, is_audio_enabled: bool) {
+    //     self.is_audio_enabled = is_audio_enabled;
+    // }
 
     // TODO: bug in select auto running before recording
     pub fn play_sound_for_smart_action(
