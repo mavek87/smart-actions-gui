@@ -165,7 +165,7 @@ pub fn run() {
                 .show_menu_on_left_click(true)
                 .build(app)?;
 
-            let tray_icon_manager = TrayIconManager::new(tray_icon.clone());
+            let tray_icon_manager = TrayIconManager::new(tray_icon);
             tray_icon_manager.show_default_icon();
 
             #[cfg(desktop)]

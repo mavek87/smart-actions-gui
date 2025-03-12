@@ -23,7 +23,7 @@ pub fn ui_notify_startup(state: State<AppState>) -> String {
             .arg(format!(
                 "{}/{}",
                 config.smart_actions_folder, config.smart_actions_executable
-            )) // Nessun bisogno di `format!()`
+            ))
             .arg(action_name)
             .arg("--print-config")
             .stdout(Stdio::piped())
