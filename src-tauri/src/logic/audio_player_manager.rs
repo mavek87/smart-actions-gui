@@ -27,7 +27,7 @@ impl AudioPlayerManager {
     pub fn play_sound_for_smart_action(
         &mut self,
         smart_action_value: &str,
-        smart_action_status: &Option<SmartActionStatus>,
+        smart_action_status: Option<SmartActionStatus>,
     ) {
         if self.is_audio_enabled {
             let audio_file = Self::find_audio_file(smart_action_value, smart_action_status);
@@ -48,7 +48,7 @@ impl AudioPlayerManager {
 
     fn find_audio_file(
         smart_action_value: &str,
-        smart_action_status: &Option<SmartActionStatus>,
+        smart_action_status: Option<SmartActionStatus>,
     ) -> String {
         let audio_file = match smart_action_status {
             Some(smart_action_status) => {

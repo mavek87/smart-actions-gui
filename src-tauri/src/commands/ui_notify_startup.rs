@@ -43,8 +43,6 @@ pub fn ui_notify_startup(state: State<AppState>) -> String {
 
         let action_config = ActionConfigParser::parse_from_string(&action_config_raw_output);
 
-        // println!("{:#?}", action_config);
-
         actions_metadata
             .actions
             .insert(action_name.to_string(), action_config);
@@ -52,8 +50,6 @@ pub fn ui_notify_startup(state: State<AppState>) -> String {
 
     let json_actions_metadata =
         serde_json::to_string(&actions_metadata).expect("Failed to parse JSON");
-
-    // println!("JSON delle azioni: {}", json_actions_metadata);
 
     json_actions_metadata
 }

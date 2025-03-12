@@ -229,8 +229,6 @@ pub fn run() {
                 ("output_terminator".to_string(), "none".to_string()),
             ]);
 
-            let audio_player_manager = AudioPlayerManager::new(true);
-
             let default_smart_action = SmartAction {
                 value: String::from("dictate_text"),
                 name: String::from("Dictate Text"),
@@ -244,6 +242,8 @@ pub fn run() {
                     arg_default_output_terminator,
                 ],
             };
+
+            let audio_player_manager = AudioPlayerManager::new(true);
 
             let app_state = AppState {
                 smart_action_manager: SmartActionManager::new(

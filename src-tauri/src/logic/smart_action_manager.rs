@@ -84,7 +84,7 @@ impl SmartActionManager {
         let mut audio_player_manager = self.audio_player_manager.lock().unwrap();
         audio_player_manager.play_sound_for_smart_action(
             &current_smart_action_value,
-            &Some(SmartActionStatus::RECORDING),
+            Some(SmartActionStatus::RECORDING),
         ); // TODO: it depends can be recording or not...
 
         // if self.process_start.lock().unwrap().is_none() {
@@ -161,7 +161,7 @@ impl SmartActionManager {
 
                 audio_player_manager.play_sound_for_smart_action(
                     &current_smart_action_value,
-                    &Some(SmartActionStatus::COMPLETED),
+                    Some(SmartActionStatus::COMPLETED),
                 );
             } else if let Some(code) = status.code() {
                 println!("Il processo è terminato con codice di errore: {}", code);
@@ -175,7 +175,7 @@ impl SmartActionManager {
 
                 audio_player_manager.play_sound_for_smart_action(
                     &current_smart_action_value,
-                    &Some(SmartActionStatus::FAILED),
+                    Some(SmartActionStatus::FAILED),
                 );
             } else {
                 println!("Il processo è terminato in modo anomalo.");
@@ -189,7 +189,7 @@ impl SmartActionManager {
 
                 audio_player_manager.play_sound_for_smart_action(
                     &current_smart_action_value,
-                    &Some(SmartActionStatus::FAILED),
+                    Some(SmartActionStatus::FAILED),
                 );
             }
 
@@ -229,13 +229,16 @@ impl SmartActionManager {
         // }
 
         self.menu_manager.lock().unwrap().set_action_stopped(); // TODO: unlock if error occurs (???)
+
         self.tray_icon_manager.lock().unwrap().show_waiting_icon();
 
-        let mut audio_player_manager = self.audio_player_manager.lock().unwrap();
-        audio_player_manager.play_sound_for_smart_action(
-            &current_smart_action_value,
-            &Some(SmartActionStatus::WAITING),
-        );
+        self.audio_player_manager
+            .lock()
+            .unwrap()
+            .play_sound_for_smart_action(
+                &current_smart_action_value,
+                Some(SmartActionStatus::WAITING),
+            );
 
         self.app_handle
             .emit("smart_action_waiting_start", "Waiting response...")

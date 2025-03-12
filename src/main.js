@@ -163,12 +163,14 @@ function extractSmartActionFromForm() {
 
     for (const [key, value] of Object.entries(data)) {
         if (key !== 'value' && key !== 'description') {
-            let argument = selectedActionInUI.options[`${key}`];
-            argument = argument.split("|")[0].trim();
-            smartAction.args.push({
-                [`${key}`]: value,
-                arg: argument
-            });
+            if (!(key === 'output_terminator' && value === 'none')) {
+                let argument = selectedActionInUI.options[`${key}`];
+                argument = argument.split("|")[0].trim();
+                smartAction.args.push({
+                    [`${key}`]: value,
+                    arg: argument
+                });
+            }
         }
     }
 
@@ -279,8 +281,6 @@ function buildElementForActionType(action_key, action_value) {
             return buildSelectElement(action_key, action_value, taskOptionsMetadata);
         case "output_format":
             const outputFormatOptionsMetadata = {
-                // NOTE: probably text is a better default here for a GUI instead of string which is better for the CLI software
-                "defaultValue": "text",
                 "tooltip": "The output format can be text format (multiple lines) or string format (one line)",
                 "values": [
                     {"value": "string", "name": "String"},
@@ -291,11 +291,11 @@ function buildElementForActionType(action_key, action_value) {
         case "output_terminator":
             const outputTerminatorOptionsMetadata = {
                 // NOTE: probably text is a better default here for a GUI instead of string which is better for the CLI software
-                "defaultValue": "none",
+                "defaultValue": "None",
                 "tooltip": "The output of the smart action can end with a Enter character or nothing more than the output itself",
                 "values": [
-                    {"value": "none", "name": "None"},
-                    {"value": "enter", "name": "Enter"},
+                    {"value": "None", "name": "None"},
+                    {"value": "Enter", "name": "Enter"},
                 ]
             }
             return buildSelectElement(action_key, action_value, outputTerminatorOptionsMetadata);
@@ -338,7 +338,6 @@ function buildSelectElement(action_key, action_value, optionsMetadata) {
     const select = document.createElement("select");
     optionsMetadata.values.forEach(optionMetadata => {
         const uiOption = document.createElement("option");
-
         uiOption.value = optionMetadata.value;
         uiOption.textContent = optionMetadata.name;
         select.appendChild(uiOption);
