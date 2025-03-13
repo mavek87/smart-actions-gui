@@ -249,12 +249,12 @@ pub fn run() {
                 smart_action_manager: SmartActionManager::new(
                     app.handle().clone(),
                     app_config,
-                    menu_manager.clone(),
+                    menu_manager,
                     tray_icon_manager.clone(),
                     audio_player_manager.clone(),
                     default_smart_action,
                 ),
-                tray_icon_manager: Mutex::new(tray_icon_manager.clone()),
+                tray_icon_manager: Mutex::new(tray_icon_manager),
                 config_manager: Mutex::new(config_manager),
                 audio_player_manager: Mutex::new(audio_player_manager),
             };
