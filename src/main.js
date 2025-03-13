@@ -163,7 +163,7 @@ function extractSmartActionFromForm() {
 
     for (const [key, value] of Object.entries(data)) {
         if (key !== 'value' && key !== 'description') {
-            if (!(key === 'output_terminator' && value === 'none')) {
+            if (!(key === 'output_terminator' && value === 'None')) {
                 let argument = selectedActionInUI.options[`${key}`];
                 argument = argument.split("|")[0].trim();
                 smartAction.args.push({
