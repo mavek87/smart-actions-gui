@@ -88,7 +88,7 @@ impl SmartActionManager {
         ); // TODO: it depends can be recording or not...
 
         let process_command_smart_action =
-            self.build_smart_actione_command().spawn().expect(&format!(
+            self.build_smart_action_command().spawn().expect(&format!(
                 "Failed to start '{} smart action",
                 current_smart_action_value
             ));
