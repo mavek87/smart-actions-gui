@@ -67,8 +67,8 @@ impl SmartActionManager {
 
     // TODO: handle errors
     pub fn start_current_smart_action(&self) {
-        // TODO: check if the smart action status consent to start
-
+        // let process_start = self.process_start.lock().unwrap();
+        // if process_start.is_none() {
         // TODO: unlock if error occurs
         self.menu_manager.lock().unwrap().set_action_started();
         self.tray_icon_manager.lock().unwrap().show_recording_icon();
@@ -87,42 +87,11 @@ impl SmartActionManager {
             Some(SmartActionStatus::RECORDING),
         ); // TODO: it depends can be recording or not...
 
-        // if self.process_start.lock().unwrap().is_none() {
-        let mut command_smart_action = Command::new("bash");
-
-        command_smart_action
-            .arg(format!(
-                "{}/smart-actions.sh",
-                self.app_config.smart_actions_folder
-            ))
-            .arg(format!("{}", current_smart_action_value));
-
-        // TODO: a refactoring is necessary
-        for arg in current_smart_action_args.iter() {
-            let mut arg_param: String = String::new();
-            let mut arg_value: String = String::new();
-
-            for arg_key in arg.keys() {
-                if let Some(value) = arg.get(arg_key) {
-                    if arg_key == "arg" {
-                        arg_param = value.to_string(); // -l
-                    } else {
-                        arg_value = value.to_string(); // it
-                    }
-                }
-            }
-
-            // TODO: what to do if value is empty?
-            if !arg_value.is_empty() {
-                command_smart_action.arg(arg_param);
-                command_smart_action.arg(arg_value);
-            }
-        }
-
-        let process_command_smart_action = command_smart_action.spawn().expect(&format!(
-            "Failed to start '{} smart action",
-            current_smart_action_value
-        ));
+        let process_command_smart_action =
+            self.build_smart_actione_command().spawn().expect(&format!(
+                "Failed to start '{} smart action",
+                current_smart_action_value
+            ));
 
         let arc_mutex_app_handle = Arc::new(Mutex::new(self.app_handle.clone()));
         let arc_mutex_process_command_smart_action =
@@ -197,12 +166,9 @@ impl SmartActionManager {
                 .lock()
                 .unwrap()
                 .show_default_icon();
+
+            // *process_start = None;
         });
-
-        // let id = process_command_smart_action.id();
-        // println!("Process ID: {}", id);
-
-        // *self.process_start.lock().unwrap() = Some(child_arc.lock().unwrap());
 
         self.app_handle
             .emit("smart_action_recording_start", "Start recording...")
@@ -214,39 +180,74 @@ impl SmartActionManager {
         // }
     }
 
+    fn build_smart_action_command(&self) -> Command {
+        let current_smart_card_state = self.smart_action_state.lock().unwrap();
+        let current_smart_action_value = current_smart_card_state.value.lock().unwrap();
+        let current_smart_action_args = current_smart_card_state.args.lock().unwrap();
+
+        let mut command_smart_action = Command::new("bash");
+        command_smart_action
+            .arg(format!(
+                "{}/smart-actions.sh",
+                self.app_config.smart_actions_folder
+            ))
+            .arg(format!("{}", current_smart_action_value));
+
+        for arg in current_smart_action_args.iter() {
+            let mut arg_param: String = String::new();
+            let mut arg_value: String = String::new();
+
+            for arg_key in arg.keys() {
+                if let Some(value) = arg.get(arg_key) {
+                    if arg_key == "arg" {
+                        arg_param = value.to_string(); // -l
+                    } else {
+                        arg_value = value.to_string(); // it
+                    }
+                }
+            }
+
+            if !arg_value.is_empty() {
+                command_smart_action.arg(arg_param).arg(arg_value);
+            }
+        }
+
+        command_smart_action
+    }
+
     pub fn stop_current_smart_action(&self) {
-        let current_smart_action_state = self.smart_action_state.lock().unwrap();
-        let current_smart_action_value = current_smart_action_state.value.lock().unwrap();
-        // let smart_action_status = current_smart_action_state.status.lock().unwrap();
-
-        // TODO: this is very complicated to do (handle the state is very hard!)
-        // if *smart_action_status != SmartActionStatus::RECORDING {
-        //     println!(
-        //         "Current smart action status is {} so it cannot be stopped",
-        //         smart_action_status
-        //     );
-        //     return;
-        // }
-
-        self.menu_manager.lock().unwrap().set_action_stopped(); // TODO: unlock if error occurs (???)
-
-        self.tray_icon_manager.lock().unwrap().show_waiting_icon();
-
-        self.audio_player_manager
-            .lock()
-            .unwrap()
-            .play_sound_for_smart_action(
-                &current_smart_action_value,
-                Some(SmartActionStatus::WAITING),
-            );
-
-        self.app_handle
-            .emit("smart_action_waiting_start", "Waiting response...")
-            .unwrap();
-
-        // Gestione del processo di registrazione
+        // let mut process_start = self.process_start.lock().unwrap();
         let mut process_stop = self.process_stop.lock().unwrap();
         if process_stop.is_none() {
+            let current_smart_action_state = self.smart_action_state.lock().unwrap();
+            let current_smart_action_value = current_smart_action_state.value.lock().unwrap();
+            // let smart_action_status = current_smart_action_state.status.lock().unwrap();
+
+            // TODO: this is very complicated to do (handle the state is very hard!)
+            // if *smart_action_status != SmartActionStatus::RECORDING {
+            //     println!(
+            //         "Current smart action status is {} so it cannot be stopped",
+            //         smart_action_status
+            //     );
+            //     return;
+            // }
+
+            self.menu_manager.lock().unwrap().set_action_stopped(); // TODO: unlock if error occurs (???)
+
+            self.tray_icon_manager.lock().unwrap().show_waiting_icon();
+
+            self.audio_player_manager
+                .lock()
+                .unwrap()
+                .play_sound_for_smart_action(
+                    &current_smart_action_value,
+                    Some(SmartActionStatus::WAITING),
+                );
+
+            self.app_handle
+                .emit("smart_action_waiting_start", "Waiting response...")
+                .unwrap();
+
             let child = Command::new("bash")
                 .arg(format!(
                     "{}/smart-actions.sh",
