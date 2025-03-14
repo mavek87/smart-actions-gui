@@ -224,6 +224,17 @@ function convertFirstCharToUppercase(str) {
 
 function buildElementForActionType(action_key, action_value) {
     switch (action_key) {
+        case "ai_provider":
+            const aiProviderOptionsMetadata = {
+                "tooltip": "This is the AI provider that will be used to generate the response",
+                "values": [
+                    {"value": "pollinations", "name": "Pollinations"},
+                    {"value": "duckduckgo", "name": "DuckDuckGo"},
+                    {"value": "ollama", "name": "Ollama"},
+                    {"value": "phind", "name": "Phind"},
+                ]
+            }
+            return buildSelectElement(action_key, action_value, aiProviderOptionsMetadata);
         case "language":
             const languageOptionsMetadata = {
                 "defaultValue": "",
