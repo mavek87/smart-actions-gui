@@ -19,6 +19,7 @@ pub struct SmartActionManager {
     // process_start: Mutex<Option<Child>>,
     process_stop: Mutex<Option<Child>>,
     is_running: Arc<Mutex<bool>>,
+    is_waiting: Arc<Mutex<bool>>,
 }
 
 impl SmartActionManager {
@@ -40,6 +41,7 @@ impl SmartActionManager {
             // process_start: Mutex::new(None::<Child>),
             process_stop: Mutex::new(None::<Child>),
             is_running: Arc::new(Mutex::new(false)),
+            is_waiting: Arc::new(Mutex::new(false)),
         }
     }
 
@@ -67,13 +69,13 @@ impl SmartActionManager {
     // TODO: handle errors
     pub fn start_current_smart_action(&self) {
         {
-            let mut is_running_guard = self.is_running.lock().unwrap();
-            if *is_running_guard {
-                println!("Smart action is already running");
-                drop(is_running_guard);
+            if !*self.is_running.lock().unwrap() && !*self.is_waiting.lock().unwrap() {
+                let mut is_running_guard = self.is_running.lock().unwrap();
+                *is_running_guard = true;
+            } else {
+                println!("Smart action cannot be started because it's already started...");
                 return;
             }
-            *is_running_guard = true;
         }
 
         self.tray_icon_manager.show_default_icon();
@@ -107,6 +109,7 @@ impl SmartActionManager {
                 Arc::new(Mutex::new(current_smart_action_value.clone()));
 
             let is_running = self.is_running.clone();
+            let is_waiting = self.is_waiting.clone();
             move || {
                 let exit_status = command_smart_action
                     .lock()
@@ -117,6 +120,10 @@ impl SmartActionManager {
                 {
                     let mut is_running = is_running.lock().unwrap();
                     *is_running = false;
+                }
+                {
+                    let mut is_waiting = is_waiting.lock().unwrap();
+                    *is_waiting = false;
                 }
 
                 let smart_action_status = Self::emit_terminal_event(app_handle, &exit_status);
@@ -153,6 +160,71 @@ impl SmartActionManager {
         // } else {
         //     println!("Recording is already running.");
         // }
+    }
+
+    pub fn stop_current_smart_action(&self) {
+        {
+            if *self.is_running.lock().unwrap() && !*self.is_waiting.lock().unwrap() {
+                let mut is_waiting_guard = self.is_waiting.lock().unwrap();
+                *is_waiting_guard = true;
+            } else {
+                println!("Smart action can't be stopped because it's not running or it's still waiting for a response");
+                return;
+            }
+        }
+
+        let current_smart_action_state = self.smart_action_state.lock().unwrap();
+        let current_smart_action_value = current_smart_action_state.value.lock().unwrap();
+        // let smart_action_status = current_smart_action_state.status.lock().unwrap();
+
+        self.menu_manager.set_action_stopped();
+
+        self.tray_icon_manager.show_waiting_icon();
+
+        self.audio_player_manager.play_sound_for_smart_action(
+            &current_smart_action_value,
+            Some(SmartActionStatus::WAITING),
+        );
+
+        self.app_handle
+            .emit("smart_action_waiting_start", "Waiting response...")
+            .unwrap();
+
+        // Gestione del processo di registrazione
+        let mut process_stop = self.process_stop.lock().unwrap();
+        if process_stop.is_none() {
+            let child = Command::new("bash")
+                .arg(format!(
+                    "{}/smart-actions.sh",
+                    self.app_config.smart_actions_folder
+                ))
+                .arg("end")
+                .spawn()
+                .expect("Failed to start 'end' action from smart-actions.sh");
+            *process_stop = Some(child);
+
+            // Aspettiamo che il processo STOP termini
+            if let Some(mut child) = process_stop.take() {
+                if let Err(err) = child.wait() {
+                    eprintln!("Error while waiting for process termination: {}", err);
+                    // self.app_handle
+                    //     .emit("smart_action_waiting_error", "Error during waiting...")
+                    //     .unwrap();
+                } else {
+                    // self.app_handle
+                    //     .emit("smart_action_waiting_stop", "Stop waiting...")
+                    //     .unwrap();
+                }
+            }
+
+            // let mut process_start = self.process_start.lock().unwrap();
+            // *process_start = None;
+            *process_stop = None;
+
+            println!("Recording stop!");
+        } else {
+            println!("Recording already stopping.");
+        }
     }
 
     fn build_cmd_smart_action(
@@ -232,69 +304,5 @@ impl SmartActionManager {
         }
 
         smart_action_status
-    }
-
-    pub fn stop_current_smart_action(&self) {
-        let current_smart_action_state = self.smart_action_state.lock().unwrap();
-        let current_smart_action_value = current_smart_action_state.value.lock().unwrap();
-        // let smart_action_status = current_smart_action_state.status.lock().unwrap();
-
-        // TODO: this is very complicated to do (handle the state is very hard!)
-        // if *smart_action_status != SmartActionStatus::RECORDING {
-        //     println!(
-        //         "Current smart action status is {} so it cannot be stopped",
-        //         smart_action_status
-        //     );
-        //     return;
-        // }
-
-        self.menu_manager.set_action_stopped();
-
-        self.tray_icon_manager.show_waiting_icon();
-
-        self.audio_player_manager.play_sound_for_smart_action(
-            &current_smart_action_value,
-            Some(SmartActionStatus::WAITING),
-        );
-
-        self.app_handle
-            .emit("smart_action_waiting_start", "Waiting response...")
-            .unwrap();
-
-        // Gestione del processo di registrazione
-        let mut process_stop = self.process_stop.lock().unwrap();
-        if process_stop.is_none() {
-            let child = Command::new("bash")
-                .arg(format!(
-                    "{}/smart-actions.sh",
-                    self.app_config.smart_actions_folder
-                ))
-                .arg("end")
-                .spawn()
-                .expect("Failed to start 'end' action from smart-actions.sh");
-            *process_stop = Some(child);
-
-            // Aspettiamo che il processo STOP termini
-            if let Some(mut child) = process_stop.take() {
-                if let Err(err) = child.wait() {
-                    eprintln!("Error while waiting for process termination: {}", err);
-                    // self.app_handle
-                    //     .emit("smart_action_waiting_error", "Error during waiting...")
-                    //     .unwrap();
-                } else {
-                    // self.app_handle
-                    //     .emit("smart_action_waiting_stop", "Stop waiting...")
-                    //     .unwrap();
-                }
-            }
-
-            // let mut process_start = self.process_start.lock().unwrap();
-            // *process_start = None;
-            *process_stop = None;
-
-            println!("Recording stop!");
-        } else {
-            println!("Recording already stopping.");
-        }
     }
 }
