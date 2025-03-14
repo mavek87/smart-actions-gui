@@ -18,7 +18,7 @@ pub struct SmartActionManager {
     smart_action_state: Mutex<SmartActionState>,
     // process_start: Mutex<Option<Child>>,
     process_stop: Mutex<Option<Child>>,
-    is_running: Mutex<bool>,
+    is_running: Arc<Mutex<bool>>,
 }
 
 impl SmartActionManager {
@@ -39,7 +39,7 @@ impl SmartActionManager {
             smart_action_state: Mutex::new(SmartActionState::new(smart_action)),
             // process_start: Mutex::new(None::<Child>),
             process_stop: Mutex::new(None::<Child>),
-            is_running: Mutex::new(false),
+            is_running: Arc::new(Mutex::new(false)),
         }
     }
 
@@ -66,9 +66,15 @@ impl SmartActionManager {
 
     // TODO: handle errors
     pub fn start_current_smart_action(&self) {
-        // if self.is_running.lock().unwrap() {
-        //     return;
-        // }
+        {
+            let mut is_running_guard = self.is_running.lock().unwrap();
+            if *is_running_guard {
+                println!("Smart action is already running");
+                drop(is_running_guard);
+                return;
+            }
+            *is_running_guard = true;
+        }
 
         self.tray_icon_manager.show_default_icon();
         self.menu_manager.set_action_started();
@@ -84,15 +90,15 @@ impl SmartActionManager {
 
         // if self.process_start.lock().unwrap().is_none() {
 
-        let mut command_smart_action = self
-            .build_cmd_smart_action(&current_smart_action_value, current_smart_action_args);
+        let mut command_smart_action =
+            self.build_cmd_smart_action(&current_smart_action_value, current_smart_action_args);
 
         let process_command_smart_action = command_smart_action.spawn().expect(&format!(
             "Failed to start '{} smart action",
             current_smart_action_value
         ));
 
-        {
+        let c = {
             let app_handle = Arc::new(Mutex::new(self.app_handle.clone()));
             let command_smart_action = Arc::new(Mutex::new(process_command_smart_action));
             let tray_icon_manager = Arc::new(Mutex::new(self.tray_icon_manager.clone()));
@@ -100,12 +106,18 @@ impl SmartActionManager {
             let current_smart_action_value =
                 Arc::new(Mutex::new(current_smart_action_value.clone()));
 
-            thread::spawn(move || {
+            let is_running = self.is_running.clone();
+            move || {
                 let exit_status = command_smart_action
                     .lock()
                     .unwrap()
                     .wait()
-                    .expect("Error during process wait");
+                    .expect("Error during process wait"); // TODO: in case of errors release locks
+
+                {
+                    let mut is_running = is_running.lock().unwrap();
+                    *is_running = false;
+                }
 
                 let smart_action_status = Self::emit_terminal_event(app_handle, &exit_status);
 
@@ -120,8 +132,10 @@ impl SmartActionManager {
                         &current_smart_action_value,
                         Some(smart_action_status),
                     );
-            });
-        }
+            }
+        };
+
+        thread::spawn(c);
 
         // let id = process_command_smart_action.id();
         // println!("Process ID: {}", id);
