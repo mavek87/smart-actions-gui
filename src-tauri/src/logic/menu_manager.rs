@@ -7,7 +7,7 @@ pub struct MenuManager {
     action_name_menu_item: Arc<Mutex<MenuItem<Wry>>>,
     start_action_menu_item: Arc<Mutex<MenuItem<Wry>>>,
     stop_action_menu_item: Arc<Mutex<MenuItem<Wry>>>,
-    is_action_started: bool,
+    is_action_started: Arc<Mutex<bool>>,
 }
 
 impl MenuManager {
@@ -20,11 +20,11 @@ impl MenuManager {
             action_name_menu_item: Arc::new(Mutex::new(action_name_menu_item)),
             start_action_menu_item: Arc::new(Mutex::new(start_menu_item)),
             stop_action_menu_item: Arc::new(Mutex::new(stop_menu_item)),
-            is_action_started: false,
+            is_action_started: Arc::new(Mutex::new(false)),
         }
     }
 
-    pub fn set_action_name_text(&mut self, text: &str) {
+    pub fn set_action_name_text(&self, text: &str) {
         self.action_name_menu_item
             .lock()
             .unwrap()
@@ -32,26 +32,28 @@ impl MenuManager {
             .unwrap();
     }
 
-    pub fn set_action_started(&mut self) {
-        self.is_action_started = true;
+    pub fn set_action_started(&self) {
+        *self.is_action_started.lock().unwrap() = true;
         self.switch_action_state_in_menu();
     }
 
-    pub fn set_action_stopped(&mut self) {
-        self.is_action_started = false;
+    pub fn set_action_stopped(&self) {
+        *self.is_action_started.lock().unwrap() = false;
         self.switch_action_state_in_menu();
     }
 
-    fn switch_action_state_in_menu(&mut self) {
+    fn switch_action_state_in_menu(&self) {
+        let guard_is_action_started = self.is_action_started.lock().unwrap();
+
         self.start_action_menu_item
             .lock()
             .unwrap()
-            .set_enabled(!self.is_action_started)
+            .set_enabled(!*guard_is_action_started)
             .unwrap(); // Disabilita Stop
         self.stop_action_menu_item
             .lock()
             .unwrap()
-            .set_enabled(self.is_action_started)
+            .set_enabled(*guard_is_action_started)
             .unwrap(); // Abilita Start
     }
 }
