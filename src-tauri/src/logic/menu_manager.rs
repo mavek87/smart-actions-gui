@@ -33,18 +33,24 @@ impl MenuManager {
     }
 
     pub fn set_action_started(&self) {
-        *self.is_action_started.lock().unwrap() = true;
+        {
+            let guard_is_action_started = self.is_action_started.lock().unwrap();
+            *guard_is_action_started = true;
+        }
         self.switch_action_state_in_menu();
     }
 
     pub fn set_action_stopped(&self) {
-        *self.is_action_started.lock().unwrap() = false;
+        {
+            let guard_is_action_started = self.is_action_started.lock().unwrap();
+            *guard_is_action_started = false;
+        }
         self.switch_action_state_in_menu();
     }
 
+    // TODO: here there is a deadlock with guard_is_action_started if one of the next unwrap fails
     fn switch_action_state_in_menu(&self) {
         let guard_is_action_started = self.is_action_started.lock().unwrap();
-
         self.start_action_menu_item
             .lock()
             .unwrap()
