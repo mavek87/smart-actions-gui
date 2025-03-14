@@ -14,3 +14,8 @@ This template should help get you started developing with Tauri in vanilla HTML,
 - smart-actions
 - dotool
 - xsetroot
+
+## Roadmap
+
+- add images to clipboard
+- add smart actions slot (1-10) where you can save your smart actions
