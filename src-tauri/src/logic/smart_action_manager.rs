@@ -3,7 +3,7 @@ use crate::domain::smart_action::{SmartAction, SmartActionState, SmartActionStat
 use crate::logic::audio_player_manager::AudioPlayerManager;
 use crate::logic::menu_manager::MenuManager;
 use crate::logic::tray_icon_manager::TrayIconManager;
-use std::process::{Child, Command};
+use std::process::{Child, Command, ExitStatus};
 use std::sync::{Arc, Mutex};
 use std::thread;
 use tauri::{AppHandle, Emitter};
@@ -117,90 +117,102 @@ impl SmartActionManager {
             current_smart_action_value
         ));
 
-        let arc_mutex_app_handle = Arc::new(Mutex::new(self.app_handle.clone()));
-        let arc_mutex_process_command_smart_action =
-            Arc::new(Mutex::new(process_command_smart_action));
-        let arc_mutex_tray_icon_manager =
-            Arc::new(Mutex::new(self.tray_icon_manager.lock().unwrap().clone()));
-        let arc_mutex_audio_player_manager = Arc::new(Mutex::new(
-            self.audio_player_manager.lock().unwrap().clone(),
-        ));
-        let arc_mutex_current_smart_action_value =
-            Arc::new(Mutex::new(current_smart_action_value.clone()));
+        {
+            let arc_mutex_app_handle = Arc::new(Mutex::new(self.app_handle.clone()));
+            let arc_mutex_process_command_smart_action =
+                Arc::new(Mutex::new(process_command_smart_action));
+            let arc_mutex_tray_icon_manager =
+                Arc::new(Mutex::new(self.tray_icon_manager.lock().unwrap().clone()));
+            let arc_mutex_audio_player_manager = Arc::new(Mutex::new(
+                self.audio_player_manager.lock().unwrap().clone(),
+            ));
+            let arc_mutex_current_smart_action_value =
+                Arc::new(Mutex::new(current_smart_action_value.clone()));
 
-        thread::spawn(move || {
-            let exit_status = arc_mutex_process_command_smart_action
-                .lock()
-                .unwrap()
-                .wait()
-                .expect("Error during process wait");
+            thread::spawn(move || {
+                let exit_status = arc_mutex_process_command_smart_action
+                    .lock()
+                    .unwrap()
+                    .wait()
+                    .expect("Error during process wait");
 
-            let app_handle_guard = arc_mutex_app_handle.lock().unwrap();
-            let smart_action_status;
-            if exit_status.success() {
-                println!("The process is end with success!");
+                let smart_action_status = Self::emit_terminal_event(arc_mutex_app_handle, exit_status);
 
-                smart_action_status = SmartActionStatus::COMPLETED;
+                arc_mutex_tray_icon_manager
+                    .lock()
+                    .unwrap()
+                    .show_default_icon();
 
-                if let Err(e) =
-                    app_handle_guard.emit("smart_action_waiting_stop", "Stop waiting...")
-                {
-                    eprintln!("Error during emission: {}", e);
-                    drop(app_handle_guard);
-                }
-            } else if let Some(code) = exit_status.code() {
-                eprintln!("The process is end with error status code: {}", code);
+                let current_smart_action_value =
+                    arc_mutex_current_smart_action_value.lock().unwrap();
 
-                smart_action_status = SmartActionStatus::FAILED;
-
-                if let Err(e) =
-                    app_handle_guard.emit("smart_action_waiting_error", "Error during waiting...")
-                {
-                    eprintln!("Error during emission: {}", e);
-                    drop(app_handle_guard);
-                }
-            } else {
-                eprintln!("The process is end anomaly");
-
-                smart_action_status = SmartActionStatus::FAILED;
-
-                if let Err(e) =
-                    app_handle_guard.emit("smart_action_waiting_error", "Error during waiting...")
-                {
-                    eprintln!("Error during emission: {}", e);
-                    drop(app_handle_guard);
-                }
-            }
-
-            arc_mutex_tray_icon_manager
-                .lock()
-                .unwrap()
-                .show_default_icon();
-
-            let current_smart_action_value = arc_mutex_current_smart_action_value.lock().unwrap();
-
-            arc_mutex_audio_player_manager
-                .lock()
-                .unwrap()
-                .play_sound_for_smart_action(
-                    &current_smart_action_value,
-                    Some(smart_action_status),
-                );
-        });
+                arc_mutex_audio_player_manager
+                    .lock()
+                    .unwrap()
+                    .play_sound_for_smart_action(
+                        &current_smart_action_value,
+                        Some(smart_action_status),
+                    );
+            });
+        }
 
         // let id = process_command_smart_action.id();
         // println!("Process ID: {}", id);
 
         // *self.process_start.lock().unwrap() = Some(child_arc.lock().unwrap());
 
-        self.app_handle
+        if let Err(e) = self
+            .app_handle
             .emit("smart_action_recording_start", "Start recording...")
-            .unwrap();
+        {
+            eprintln!("Error during emission: {}", e);
+        }
 
         println!("Recording started!");
         // } else {
         //     println!("Recording is already running.");
         // }
+    }
+
+    fn emit_terminal_event(arc_mutex_app_handle: Arc<Mutex<AppHandle>>, exit_status: ExitStatus) -> SmartActionStatus {
+        let app_handle_guard = arc_mutex_app_handle.lock().unwrap();
+        let smart_action_status;
+        if exit_status.success() {
+            println!("The process is end with success!");
+
+            smart_action_status = SmartActionStatus::COMPLETED;
+
+            if let Err(e) =
+                app_handle_guard.emit("smart_action_waiting_stop", "Stop waiting...")
+            {
+                eprintln!("Error during emission: {}", e);
+                drop(app_handle_guard);
+            }
+        } else if let Some(code) = exit_status.code() {
+            eprintln!("The process is end with error status code: {}", code);
+
+            smart_action_status = SmartActionStatus::FAILED;
+
+            if let Err(e) = app_handle_guard
+                .emit("smart_action_waiting_error", "Error during waiting...")
+            {
+                eprintln!("Error during emission: {}", e);
+                drop(app_handle_guard);
+            }
+        } else {
+            eprintln!("The process is end anomaly");
+
+            smart_action_status = SmartActionStatus::FAILED;
+
+            if let Err(e) = app_handle_guard
+                .emit("smart_action_waiting_error", "Error during waiting...")
+            {
+                eprintln!("Error during emission: {}", e);
+                drop(app_handle_guard);
+            }
+        }
+
+        smart_action_status
     }
 
     pub fn stop_current_smart_action(&self) {

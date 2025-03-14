@@ -25,7 +25,7 @@ impl AudioPlayerManager {
 
     // TODO: bug in select auto running before recording
     pub fn play_sound_for_smart_action(
-        &mut self,
+        &self,
         smart_action_value: &str,
         smart_action_status: Option<SmartActionStatus>,
     ) {
