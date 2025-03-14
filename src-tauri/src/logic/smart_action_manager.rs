@@ -68,14 +68,11 @@ impl SmartActionManager {
 
     // TODO: handle errors
     pub fn start_current_smart_action(&self) {
-        {
-            if !*self.is_running.lock().unwrap() && !*self.is_waiting.lock().unwrap() {
-                let mut is_running_guard = self.is_running.lock().unwrap();
-                *is_running_guard = true;
-            } else {
-                println!("Smart action cannot be started because it's already started...");
-                return;
-            }
+        if !*self.is_running.lock().unwrap() && !*self.is_waiting.lock().unwrap() {
+            *self.is_running.lock().unwrap() = true;
+        } else {
+            println!("Smart action cannot be started because it's already started...");
+            return;
         }
 
         self.tray_icon_manager.show_default_icon();
@@ -100,7 +97,7 @@ impl SmartActionManager {
             current_smart_action_value
         ));
 
-        let c = {
+        let thread_check_status_closure = {
             let app_handle = Arc::new(Mutex::new(self.app_handle.clone()));
             let command_smart_action = Arc::new(Mutex::new(process_command_smart_action));
             let tray_icon_manager = Arc::new(Mutex::new(self.tray_icon_manager.clone()));
@@ -110,26 +107,32 @@ impl SmartActionManager {
 
             let is_running = self.is_running.clone();
             let is_waiting = self.is_waiting.clone();
-            move || {
-                let exit_status = command_smart_action
-                    .lock()
-                    .unwrap()
-                    .wait()
-                    .expect("Error during process wait"); // TODO: in case of errors release locks
 
-                {
-                    let mut is_running = is_running.lock().unwrap();
-                    *is_running = false;
-                }
-                {
-                    let mut is_waiting = is_waiting.lock().unwrap();
-                    *is_waiting = false;
-                }
+            move || {
+                let result_exit_status = command_smart_action.lock().unwrap().wait();
+
+                let set_not_running_nor_waiting_states = || {
+                    *is_running.lock().unwrap() = false;
+                    *is_waiting.lock().unwrap() = false;
+                };
+
+                let exit_status = match result_exit_status {
+                    Ok(exit_status) => {
+                        set_not_running_nor_waiting_states();
+                        exit_status
+                    }
+                    Err(e) => {
+                        eprintln!("Error {e}");
+                        set_not_running_nor_waiting_states();
+                        return;
+                    }
+                };
 
                 let smart_action_status = Self::emit_terminal_event(app_handle, &exit_status);
 
                 tray_icon_manager.lock().unwrap().show_default_icon();
 
+                // TODO: possible deadlock if the next unwrap fails and this lock is not released
                 let current_smart_action_value = current_smart_action_value.lock().unwrap();
 
                 audio_player_manager
@@ -142,7 +145,7 @@ impl SmartActionManager {
             }
         };
 
-        thread::spawn(c);
+        thread::spawn(thread_check_status_closure);
 
         // let id = process_command_smart_action.id();
         // println!("Process ID: {}", id);
@@ -163,14 +166,11 @@ impl SmartActionManager {
     }
 
     pub fn stop_current_smart_action(&self) {
-        {
-            if *self.is_running.lock().unwrap() && !*self.is_waiting.lock().unwrap() {
-                let mut is_waiting_guard = self.is_waiting.lock().unwrap();
-                *is_waiting_guard = true;
-            } else {
-                println!("Smart action can't be stopped because it's not running or it's still waiting for a response");
-                return;
-            }
+        if *self.is_running.lock().unwrap() && !*self.is_waiting.lock().unwrap() {
+            *self.is_waiting.lock().unwrap() = true;
+        } else {
+            println!("Smart action can't be stopped because it's not running or it's still waiting for a response");
+            return;
         }
 
         let current_smart_action_state = self.smart_action_state.lock().unwrap();
