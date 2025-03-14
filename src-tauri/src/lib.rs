@@ -30,6 +30,7 @@ use logic::{
     menu_manager::MenuManager, smart_action_manager::SmartActionManager,
     tray_icon_manager::TrayIconManager,
 };
+use crate::commands::ui_notify_change_element_in_action::ui_notify_change_element_in_action;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -267,6 +268,7 @@ pub fn run() {
         // .plugin(tauri_plugin_opener::init())
         .invoke_handler(tauri::generate_handler![
             ui_notify_change_action,
+            ui_notify_change_element_in_action,
             ui_notify_startup,
             ui_request_execute_action,
             ui_request_stop_action,

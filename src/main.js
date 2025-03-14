@@ -9,6 +9,10 @@ async function ui_notify_change_action(jsonSmartAction) {
     await invoke("ui_notify_change_action", {jsonSmartAction});
 }
 
+async function ui_notify_change_element_in_action(jsonSmartAction) {
+    await invoke("ui_notify_change_element_in_action", {jsonSmartAction});
+}
+
 async function ui_request_execute_action(jsonSmartAction) {
     return await invoke("ui_request_execute_action", {jsonSmartAction});
 }
@@ -31,7 +35,7 @@ const button_submitFormActionWait = document.getElementById("button_submit-form-
 
 select_action.addEventListener('change', function () {
     populateViewForAction();
-    notify_change_smart_action_to_tauri();
+    ui_notify_change_action(extractSmartActionJsonFromForm())
 });
 
 button_submitFormAction.addEventListener('click', async function (e) {
@@ -115,10 +119,6 @@ window.addEventListener("DOMContentLoaded", async () => {
 
     select_action.title = "Select a smart action to execute";
 });
-
-function notify_change_smart_action_to_tauri() {
-    ui_notify_change_action(extractSmartActionJsonFromForm());
-}
 
 function selectNextAction() {
     const optionsCount = select_action.options.length;
@@ -250,9 +250,9 @@ function buildElementForActionType(action_key, action_value) {
             return buildSelectElement(action_key, action_value, languageOptionsMetadata);
         case "selection_target":
             const selectionTargetOptionsMetadata = {
-                // NOTE: terminal doesn't make sense in a GUI, so it's omitted
                 "defaultValue": "none",
                 "tooltip": "If 'none' isn't selected the AI can take into account the selected text or the text copied into the clipboard",
+                // NOTE: terminal doesn't make sense in a GUI, so it's omitted
                 "values": [
                     {"value": "none", "name": "None"},
                     {"value": "primary", "name": "Selected Text"},
@@ -262,8 +262,8 @@ function buildElementForActionType(action_key, action_value) {
             return buildSelectElement(action_key, action_value, selectionTargetOptionsMetadata);
         case "output_destination":
             const outputDestinationOptionsMetadata = {
-                // NOTE: terminal doesn't make sense in a GUI, so it's omitted
                 "defaultValue": "display",
+                // NOTE: terminal doesn't make sense in a GUI, so it's omitted
                 "values": [
                     {"value": "display", "name": "Display"},
                 ]
@@ -323,7 +323,7 @@ function buildDefaultElement(action_key, action_value) {
     inputText.name = action_key;
     const inputChangeListener = function (event) {
         console.log(event.target.value);
-        notify_change_smart_action_to_tauri();
+        ui_notify_change_element_in_action(extractSmartActionJsonFromForm());
     }
     inputText.addEventListener('input', inputChangeListener);
     inputListeners.push({
@@ -359,7 +359,7 @@ function buildSelectElement(action_key, action_value, optionsMetadata) {
     select.name = action_key;
     const selectChangeListener = function (event) {
         console.log(event.target.value);
-        notify_change_smart_action_to_tauri();
+        ui_notify_change_element_in_action(extractSmartActionJsonFromForm());
     }
     select.addEventListener('change', selectChangeListener);
     inputListeners.push({
