@@ -53,16 +53,15 @@ impl SmartActionManager {
     }
 
     pub fn change_current_smart_action(&self, new_smart_action: SmartAction) {
-        let new_smart_action_clone = new_smart_action.clone();
-        let smart_action_name_ref = &new_smart_action.name;
-
-        let mut current_smart_action = self.smart_action_state.lock().unwrap();
-        *current_smart_action = SmartActionState::new(new_smart_action_clone);
+        let smart_action_name = &new_smart_action.name;
 
         self.menu_manager
             .lock()
             .unwrap()
-            .set_action_name_text(&smart_action_name_ref);
+            .set_action_name_text(&smart_action_name);
+
+        let mut current_smart_action = self.smart_action_state.lock().unwrap();
+        *current_smart_action = SmartActionState::new(new_smart_action);
     }
 
     // TODO: handle errors
@@ -147,7 +146,9 @@ impl SmartActionManager {
 
                 smart_action_status = SmartActionStatus::COMPLETED;
 
-                if let Err(e) = app_handle_guard.emit("smart_action_waiting_stop", "Stop waiting...") {
+                if let Err(e) =
+                    app_handle_guard.emit("smart_action_waiting_stop", "Stop waiting...")
+                {
                     eprintln!("Error during emission: {}", e);
                     drop(app_handle_guard);
                 }
