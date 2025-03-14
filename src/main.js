@@ -298,6 +298,14 @@ function buildElementForActionType(action_key, action_value) {
                     {"value": "text", "name": "Text"},
                 ]
             }
+
+            if (select_action.value === "ai_reply_text") {
+                outputFormatOptionsMetadata.values.push(
+                    {"value": "code_string", "name": "Code String"},
+                    {"value": "code_text", "name": "Code Text"},
+                )
+            }
+
             return buildSelectElement(action_key, action_value, outputFormatOptionsMetadata);
         case "output_terminator":
             const outputTerminatorOptionsMetadata = {
