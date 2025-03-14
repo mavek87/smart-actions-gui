@@ -74,10 +74,6 @@ impl SmartActionManager {
         let current_smart_action_value = smart_action_state.value.lock().unwrap();
         let current_smart_action_args = smart_action_state.args.lock().unwrap();
 
-        // TODO: change the internal state to recording????
-        // self.smart_action_state.lock().unwrap().status =
-        //     Arc::new(Mutex::new(SmartActionStatus::RECORDING));
-
         self.audio_player_manager
             .lock()
             .unwrap()
