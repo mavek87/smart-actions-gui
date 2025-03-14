@@ -24,7 +24,6 @@ impl AudioPlayerManager {
     //     self.is_audio_enabled = is_audio_enabled;
     // }
 
-    // TODO: bug in select auto running before recording
     pub fn play_sound_for_smart_action(
         &self,
         smart_action_value: &str,

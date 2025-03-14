@@ -82,8 +82,6 @@ impl SmartActionManager {
             Some(SmartActionStatus::RECORDING),
         ); // TODO: it depends can be recording or not...
 
-        // if self.process_start.lock().unwrap().is_none() {
-
         let mut command_smart_action =
             self.build_cmd_smart_action(&current_smart_action_value, current_smart_action_args);
 
@@ -126,6 +124,11 @@ impl SmartActionManager {
                 let smart_action_status = Self::emit_terminal_event(app_handle, &exit_status);
 
                 tray_icon_manager.lock().unwrap().show_default_icon();
+
+                let _ = Command::new("xsetroot")
+                    .arg("-cursor_name")
+                    .arg("left_ptr")
+                    .spawn();
 
                 // TODO: possible deadlock if the next unwrap fails and this lock is not released
                 let current_smart_action_value = current_smart_action_value.lock().unwrap();
@@ -190,6 +193,11 @@ impl SmartActionManager {
             {
                 eprintln!("Error during emission: {}", e);
             }
+
+            let _ = Command::new("xsetroot")
+                .arg("-cursor_name")
+                .arg("watch")
+                .spawn();
 
             println!("Smart action stopped!");
         }
