@@ -34,7 +34,7 @@ impl MenuManager {
 
     pub fn set_action_started(&self) {
         {
-            let guard_is_action_started = self.is_action_started.lock().unwrap();
+            let mut guard_is_action_started = self.is_action_started.lock().unwrap();
             *guard_is_action_started = true;
         }
         self.switch_action_state_in_menu();
@@ -42,7 +42,7 @@ impl MenuManager {
 
     pub fn set_action_stopped(&self) {
         {
-            let guard_is_action_started = self.is_action_started.lock().unwrap();
+            let mut guard_is_action_started = self.is_action_started.lock().unwrap();
             *guard_is_action_started = false;
         }
         self.switch_action_state_in_menu();
