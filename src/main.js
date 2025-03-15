@@ -224,6 +224,15 @@ function convertFirstCharToUppercase(str) {
 
 function buildElementForActionType(action_key, action_value) {
     switch (action_key) {
+        case "audio_sampling_rate":
+            const audioSamplingRate = {
+                "tooltip": "This is the sampling rate of the recording",
+                "values": [
+                    {"value": "44100", "name": "44100"},
+                    {"value": "48000", "name": "48000"},
+                ]
+            }
+            return buildSelectElement(action_key, action_value, audioSamplingRate);
         case "ai_provider":
             const aiProviderOptionsMetadata = {
                 "tooltip": "This is the AI provider that will be used to generate the response",
