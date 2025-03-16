@@ -1,4 +1,5 @@
 use crate::domain::app_config::AppConfig;
+use crate::domain::mouse_cursor_icon::MouseCursorIcon;
 use crate::domain::smart_action::{SmartAction, SmartActionState, SmartActionStatus};
 use crate::logic::audio_player_manager::AudioPlayerManager;
 use crate::logic::menu_manager::MenuManager;
@@ -134,10 +135,7 @@ impl SmartActionManager {
 
                 tray_icon_manager.lock().unwrap().show_default_icon();
 
-                let _ = Command::new("xsetroot")
-                    .arg("-cursor_name")
-                    .arg("left_ptr")
-                    .spawn();
+                Self::set_mouse_cursor(&MouseCursorIcon::DEFAULT);
 
                 // TODO: possible deadlock if the next unwrap fails and this lock is not released...
                 let current_smart_action_value = current_smart_action_value.lock().unwrap();
@@ -192,15 +190,6 @@ impl SmartActionManager {
 
             self.tray_icon_manager.show_waiting_icon();
 
-            // DISABLED BECAUSE IT'S USELESS TO INDICATE WHEN THE ACTION IS COMPLETED
-            // let current_smart_action_state = self.smart_action_state.lock().unwrap();
-            // let current_smart_action_value = current_smart_action_state.value.lock().unwrap();
-            //
-            // self.audio_player_manager.play_sound_for_smart_action(
-            //     &current_smart_action_value,
-            //     Some(SmartActionStatus::WAITING),
-            // );
-
             if let Err(e) = self
                 .app_handle
                 .emit(&EVENT_TO_UI_WAITING_START, "Waiting response...")
@@ -208,10 +197,7 @@ impl SmartActionManager {
                 eprintln!("Error during emission: {}", e);
             }
 
-            let _ = Command::new("xsetroot")
-                .arg("-cursor_name")
-                .arg("watch")
-                .spawn();
+            Self::set_mouse_cursor(&MouseCursorIcon::WAITING);
 
             println!("Smart action stopped!");
         }
@@ -255,6 +241,35 @@ impl SmartActionManager {
                 eprintln!("Error during emission: {}", e);
             }
         }
+    }
+
+    pub fn try_to_fix_issues(&self) {
+        let processes_to_kill: Vec<&str> = vec![
+            "piper",
+            "nerd-dictation",
+            "whisper",
+            "ffmpeg",
+            "tgpt",
+            "dotool",
+            "smart-actions.sh",
+        ];
+
+        for process in processes_to_kill {
+            self.try_to_kill_process_or_print_error_if_it_fail(process);
+        }
+
+        Self::set_mouse_cursor(&MouseCursorIcon::DEFAULT);
+    }
+
+    fn try_to_kill_process_or_print_error_if_it_fail(&self, system_process_name: &str) {
+        let mut command;
+        command = Command::new("pkill")
+            .arg("-9")
+            .arg("-f")
+            .arg(system_process_name)
+            .spawn()
+            .map_err(|e| eprintln!("Error trying to kill process {e}"))
+            .ok();
     }
 
     fn build_cmd_smart_action(
@@ -334,5 +349,14 @@ impl SmartActionManager {
         }
 
         smart_action_status
+    }
+
+    fn set_mouse_cursor(mouse_cursor_type: &MouseCursorIcon) {
+        Command::new("xsetroot")
+            .arg("-cursor_name")
+            .arg(mouse_cursor_type.value())
+            .spawn()
+            .map_err(|e| eprintln!("Error trying to change the mouse cursor {e}"))
+            .ok();
     }
 }

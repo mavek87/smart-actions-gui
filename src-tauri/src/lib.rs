@@ -70,25 +70,34 @@ pub fn run() {
             //let lang_str = "unset";
 
             // https://v2.tauri.app/learn/window-menu/
-            let lang_sub_item_unset = CheckMenuItemBuilder::with_id("unset", "Unset")
+implemen            let lang_sub_menu_item_unset = CheckMenuItemBuilder::with_id("unset", "Unset")
                 .checked(true)
                 .build(app)?;
 
-            let lang_sub_item_en = CheckMenuItemBuilder::with_id("en", "English")
+            let lang_sub_menu_item_en = CheckMenuItemBuilder::with_id("en", "English")
                 .checked(false)
                 .build(app)?;
 
-            let lang_sub_item_it = CheckMenuItemBuilder::with_id("it", "Italian")
+            let lang_sub_menu_item_it = CheckMenuItemBuilder::with_id("it", "Italian")
                 .checked(false)
                 .build(app)?;
 
             let language_submenu = SubmenuBuilder::new(app, "Language")
-                .item(&lang_sub_item_unset)
-                .item(&lang_sub_item_en)
-                .item(&lang_sub_item_it)
+                .item(&lang_sub_menu_item_unset)
+                .item(&lang_sub_menu_item_en)
+                .item(&lang_sub_menu_item_it)
                 .build()?;
 
-            let about_metadata = AboutMetadataBuilder::new()
+            let audio_sub_menu_item_enabled =
+                CheckMenuItemBuilder::with_id("audio_enabled", "Enabled")
+                    .checked(true)
+                    .build(app)?;
+
+            let audio_submenu = SubmenuBuilder::new(app, "Audio")
+                .item(&audio_sub_menu_item_enabled)
+                .build()?;
+
+            let help_sub_menu_item_about_metadata = AboutMetadataBuilder::new()
                 .name(Some(APP_NAME.to_string()))
                 .version(Some(APP_VERSION.to_string()))
                 .website_label(Some(WEBSITE_LABEL.to_string()))
@@ -96,16 +105,14 @@ pub fn run() {
                 .authors(Some(AUTHORS.iter().map(|&s| s.to_string()).collect()))
                 .build();
 
-            let audio_sub_item_enabled = CheckMenuItemBuilder::with_id("audio_enabled", "Enabled")
-                .checked(true)
+            let help_sub_menu_item_try_to_fix_issues = MenuItemBuilder::new("Try to fix issues")
+                .id("try_to_fix_issues")
+                .enabled(true)
                 .build(app)?;
 
-            let audio_submenu = SubmenuBuilder::new(app, "Audio")
-                .item(&audio_sub_item_enabled)
-                .build()?;
-
             let help_submenu = SubmenuBuilder::new(app, "Help")
-                .about(Some(about_metadata))
+                .item(&help_sub_menu_item_try_to_fix_issues)
+                .about(Some(help_sub_menu_item_about_metadata))
                 .build()?;
 
             let quit_item = MenuItemBuilder::new("Quit")
@@ -156,24 +163,29 @@ pub fn run() {
                         let app_state: State<AppState> = app.state();
                         app_state.smart_action_manager.stop_vocal_audio();
                     }
+                    "try_to_fix_issues" => {
+                        println!("try to fix issues menu item was clicked");
+                        let app_state: State<AppState> = app.state();
+                        app_state.smart_action_manager.try_to_fix_issues();
+                    }
                     "quit" => {
                         println!("quit menu item was clicked");
                         app.exit(0);
                     }
                     "unset" | "en" | "it" => {
-                        lang_sub_item_unset
+                        lang_sub_menu_item_unset
                             .set_checked(event.id().0.as_str() == "unset")
                             .expect("Change check error");
-                        lang_sub_item_en
+                        lang_sub_menu_item_en
                             .set_checked(event.id().0.as_str() == "en")
                             .expect("Change check error");
-                        audio_sub_item_enabled
+                        audio_sub_menu_item_enabled
                             .set_checked(event.id().0.as_str() == "it")
                             .expect("Change check error");
                     }
-                    "audio_enabled" => match audio_sub_item_enabled.is_checked() {
+                    "audio_enabled" => match audio_sub_menu_item_enabled.is_checked() {
                         Ok(is_checked) => {
-                            audio_sub_item_enabled
+                            audio_sub_menu_item_enabled
                                 .set_checked(is_checked)
                                 .expect("Change check error");
                             let app_state: State<AppState> = app.state();
@@ -199,7 +211,7 @@ pub fn run() {
 
                 app.handle().plugin(
                     tauri_plugin_global_shortcut::Builder::new()
-                        .with_shortcuts(["alt+s", "alt+a", "alt+n", "alt+b"])?
+                        .with_shortcuts(["alt+s", "alt+a", "alt+n", "alt+b", "alt+h"])?
                         .with_handler(|app, shortcut, event| {
                             if event.state == ShortcutState::Pressed {
                                 if shortcut.matches(Modifiers::ALT, Code::KeyS) {
@@ -222,6 +234,10 @@ pub fn run() {
                                     app_state
                                         .smart_action_manager
                                         .change_with_previous_smart_action();
+                                } else if shortcut.matches(Modifiers::ALT, Code::KeyH) {
+                                    println!("ALT+H Pressed! - try to fix issues");
+                                    let app_state: State<AppState> = app.state();
+                                    app_state.smart_action_manager.try_to_fix_issues();
                                 }
                             }
                         })
