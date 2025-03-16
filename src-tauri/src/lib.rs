@@ -7,8 +7,7 @@ use std::string::ToString;
 use std::sync::Mutex;
 use tauri::{
     menu::{
-        AboutMetadataBuilder, CheckMenuItemBuilder, MenuBuilder, MenuItem, MenuItemBuilder,
-        SubmenuBuilder,
+        AboutMetadataBuilder, CheckMenuItemBuilder, MenuBuilder, MenuItemBuilder, SubmenuBuilder,
     },
     tray::TrayIconBuilder,
     Manager, State,
@@ -22,6 +21,7 @@ use commands::{
 
 use domain::{app_state::AppState, smart_action::SmartAction};
 
+use crate::commands::ui_notify_change_element_in_action::ui_notify_change_element_in_action;
 use crate::domain::constants::{
     APP_NAME, APP_VERSION, AUTHORS, DEFAULT_CONFIG_FILE, WEBSITE, WEBSITE_LABEL,
 };
@@ -30,7 +30,6 @@ use logic::{
     menu_manager::MenuManager, smart_action_manager::SmartActionManager,
     tray_icon_manager::TrayIconManager,
 };
-use crate::commands::ui_notify_change_element_in_action::ui_notify_change_element_in_action;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -52,11 +51,20 @@ pub fn run() {
                 .enabled(false)
                 .build(app)?;
 
-            let start_action_menu_item =
-                MenuItem::with_id(app, "start", "Start", true, Some("Ctrl+N"))?;
+            let start_action_menu_item = MenuItemBuilder::new("Start")
+                .id("start")
+                .enabled(true)
+                .build(app)?;
 
-            let stop_action_menu_item =
-                MenuItem::with_id(app, "stop", "Stop", false, Some("Ctrl+E"))?;
+            let stop_action_menu_item = MenuItemBuilder::new("Stop")
+                .id("stop")
+                .enabled(false)
+                .build(app)?;
+
+            let stop_vocal_audio_item = MenuItemBuilder::new("Stop vocal audio")
+                .id("stop_vocal_audio")
+                .enabled(false)
+                .build(app)?;
 
             // TODO: use the current language if present (A language manager could be created too)
             //let lang_str = "unset";
@@ -108,7 +116,11 @@ pub fn run() {
             let menu = MenuBuilder::new(app)
                 .item(&action_name_menu_item)
                 .separator()
-                .items(&[&start_action_menu_item, &stop_action_menu_item])
+                .items(&[
+                    &start_action_menu_item,
+                    &stop_action_menu_item,
+                    &stop_vocal_audio_item,
+                ])
                 .separator()
                 .item(&language_submenu)
                 .item(&audio_submenu)
@@ -122,6 +134,7 @@ pub fn run() {
                 action_name_menu_item,
                 start_action_menu_item,
                 stop_action_menu_item,
+                stop_vocal_audio_item,
             );
 
             let tray_icon = TrayIconBuilder::new()
@@ -137,6 +150,11 @@ pub fn run() {
                         println!("stop record was clicked");
                         let app_state: State<AppState> = app.state();
                         app_state.smart_action_manager.stop_current_smart_action();
+                    }
+                    "stop_vocal_audio" => {
+                        println!("stop vocal audio was clicked");
+                        let app_state: State<AppState> = app.state();
+                        app_state.smart_action_manager.stop_vocal_audio();
                     }
                     "quit" => {
                         println!("quit menu item was clicked");

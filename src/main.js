@@ -319,14 +319,23 @@ function buildElementForActionType(action_key, action_value) {
         case "output_terminator":
             const outputTerminatorOptionsMetadata = {
                 // NOTE: probably text is a better default here for a GUI instead of string which is better for the CLI software
-                "defaultValue": "None",
+                "defaultValue": "none",
                 "tooltip": "The output of the smart action can end with a Enter character or nothing more than the output itself",
                 "values": [
-                    {"value": "None", "name": "None"},
-                    {"value": "Enter", "name": "Enter"},
+                    {"value": "none", "name": "None"},
+                    {"value": "enter", "name": "Enter"},
                 ]
             }
             return buildSelectElement(action_key, action_value, outputTerminatorOptionsMetadata);
+        case "output_audio_voice":
+            const outputAudioVoice = {
+                "tooltip": "If it's true the output text will also be read by a speech to text software, otherwise if false this doesn't happen",
+                "values": [
+                    {"value": "true", "name": "true"},
+                    {"value": "false", "name": "false"},
+                ]
+            }
+            return buildSelectElement(action_key, action_value, outputAudioVoice);
         default:
             return buildDefaultElement(action_key, action_value);
     }

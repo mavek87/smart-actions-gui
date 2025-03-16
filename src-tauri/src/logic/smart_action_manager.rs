@@ -15,7 +15,7 @@ pub struct SmartActionManager {
     menu_manager: MenuManager,
     tray_icon_manager: TrayIconManager,
     audio_player_manager: AudioPlayerManager,
-    smart_action_state: Mutex<SmartActionState>,
+    smart_action_state: Mutex<SmartActionState>, // TODO: can be directly an arc mutex right??
     is_running: Arc<Mutex<bool>>,
     is_waiting: Arc<Mutex<bool>>,
 }
@@ -35,7 +35,7 @@ impl SmartActionManager {
             menu_manager,
             tray_icon_manager,
             audio_player_manager,
-            smart_action_state: Mutex::new(SmartActionState::new(smart_action)),
+            smart_action_state: Mutex::new(SmartActionState::new(smart_action)), // TODO: can be directly an arc mutex right??
             is_running: Arc::new(Mutex::new(false)),
             is_waiting: Arc::new(Mutex::new(false)),
         }
@@ -130,7 +130,7 @@ impl SmartActionManager {
                     .arg("left_ptr")
                     .spawn();
 
-                // TODO: possible deadlock if the next unwrap fails and this lock is not released
+                // TODO: possible deadlock if the next unwrap fails and this lock is not released...
                 let current_smart_action_value = current_smart_action_value.lock().unwrap();
 
                 audio_player_manager
@@ -163,6 +163,9 @@ impl SmartActionManager {
             return;
         }
 
+        // TODO: to be more precise this should be set to true only if a vocal audio is running for the current smart action...
+        self.menu_manager.set_vocal_audio_menu_item_enabled(true);
+
         let mut child = Command::new("bash")
             .arg(format!(
                 "{}/smart-actions.sh",
@@ -172,6 +175,7 @@ impl SmartActionManager {
             .spawn()
             .expect("Failed to start 'end' action from smart-actions.sh");
 
+        // TODO: this blocks the tauri main thread... it's not ok
         if let Err(err) = child.wait() {
             eprintln!("Error while waiting for process termination: {}", err);
         } else {
@@ -201,6 +205,23 @@ impl SmartActionManager {
 
             println!("Smart action stopped!");
         }
+    }
+
+    pub fn stop_vocal_audio(&self) {
+        if let Err(e) = Command::new("bash")
+            .arg(format!(
+                "{}/smart-actions.sh",
+                self.app_config.smart_actions_folder
+            ))
+            .arg("end_output_audio_vocal")
+            .spawn()
+        {
+            eprintln!("Error stopping vocal audio: {}", e);
+        } else {
+            println!("Vocal audio stopped!");
+        }
+
+        self.menu_manager.set_vocal_audio_menu_item_enabled(false)
     }
 
     fn build_cmd_smart_action(

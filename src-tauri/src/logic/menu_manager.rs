@@ -7,6 +7,7 @@ pub struct MenuManager {
     action_name_menu_item: Arc<Mutex<MenuItem<Wry>>>,
     start_action_menu_item: Arc<Mutex<MenuItem<Wry>>>,
     stop_action_menu_item: Arc<Mutex<MenuItem<Wry>>>,
+    stop_vocal_audio_menu_item: Arc<Mutex<MenuItem<Wry>>>,
     is_action_started: Arc<Mutex<bool>>,
 }
 
@@ -15,11 +16,13 @@ impl MenuManager {
         action_name_menu_item: MenuItem<Wry>,
         start_menu_item: MenuItem<Wry>,
         stop_menu_item: MenuItem<Wry>,
+        stop_vocal_audio_menu_item: MenuItem<Wry>,
     ) -> Self {
         Self {
             action_name_menu_item: Arc::new(Mutex::new(action_name_menu_item)),
             start_action_menu_item: Arc::new(Mutex::new(start_menu_item)),
             stop_action_menu_item: Arc::new(Mutex::new(stop_menu_item)),
+            stop_vocal_audio_menu_item: Arc::new(Mutex::new(stop_vocal_audio_menu_item)),
             is_action_started: Arc::new(Mutex::new(false)),
         }
     }
@@ -30,6 +33,14 @@ impl MenuManager {
             .unwrap()
             .set_text(text)
             .unwrap();
+    }
+
+    pub fn set_vocal_audio_menu_item_enabled(&self, is_enabled: bool) {
+        self.stop_vocal_audio_menu_item
+           .lock()
+           .unwrap()
+           .set_enabled(is_enabled)
+           .unwrap();
     }
 
     pub fn set_action_started(&self) {
