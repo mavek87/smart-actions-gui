@@ -10,6 +10,7 @@
 
 ## Roadmap
 
+- use language from the tray menu bar
 - find a way to display errors
 - download various models (piper, nerd-dictation)
 - add images to clipboard

@@ -8,7 +8,8 @@ use tauri::{command, State};
 
 #[command]
 pub fn ui_notify_startup(state: State<AppState>) -> String {
-    let action_names: [&str; 3] = ["dictate_text", "ai_reply_text", "audio_to_text"];
+    // TODO: find a way to automatically read all the actions without hardcoding an array
+    let action_names: [&str; 4] = ["dictate_text", "ai_reply_text", "audio_to_text", "text_to_speech"];
 
     let smart_action_manager = &state.smart_action_manager;
     let is_audio_enabled = smart_action_manager.is_audio_enabled().unwrap_or(false);
