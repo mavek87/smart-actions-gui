@@ -1,3 +1,4 @@
+use crate::domain::app_config::AppConfig;
 use crate::domain::constants::AUDIO_FOLDER;
 use crate::domain::smart_action::SmartActionStatus;
 use std::io::{Error, ErrorKind};
@@ -13,12 +14,14 @@ use std::sync::{Arc, Mutex};
 
 #[derive(Debug, Clone)]
 pub struct AudioPlayerManager {
+    app_config: AppConfig,
     is_audio_enabled: Arc<Mutex<bool>>,
 }
 
 impl AudioPlayerManager {
-    pub fn new(is_audio_enabled: bool) -> Self {
+    pub fn new(app_config: AppConfig, is_audio_enabled: bool) -> Self {
         Self {
+            app_config,
             is_audio_enabled: Arc::new(Mutex::new(is_audio_enabled)),
         }
     }
@@ -43,14 +46,52 @@ impl AudioPlayerManager {
         }
     }
 
+    pub fn play_sound_from_text(&self, text: &str, language: &str) -> Result<(), Error> {
+        match self.is_audio_enabled.lock() {
+            Ok(is_audio_enabled) => {
+                if *is_audio_enabled {
+                    let mut command = Command::new("bash");  // Usa let mut per la variabile command
+                    command
+                        .arg(format!(
+                            "{}/smart-actions.sh",
+                            self.app_config.smart_actions_folder
+                        ))
+                        .arg("text_to_speech")
+                        .arg("--text")
+                        .arg(text);
+                    // TODO: use option could be better
+                    if !language.trim().is_empty() {
+                        command.arg("--language").arg(language);
+                    }
+                    command
+                        .spawn()
+                        .expect("Failed to start 'end' action from smart-actions.sh");
+                }
+                Ok(())
+            }
+            Err(e) => Err(Error::new(ErrorKind::Other, format!("Error: {}", e))),
+        }
+    }
+
     pub fn play_sound_for_smart_action(
         &self,
         smart_action_value: &str,
         smart_action_status: Option<SmartActionStatus>,
     ) {
         if *self.is_audio_enabled.lock().unwrap() {
-            let audio_file = self.find_audio_file(smart_action_value, smart_action_status);
-            self.play_audio_file(&audio_file);
+            // TODO: the phisical files are not used anymore
+            // let audio_file = self.find_audio_file(smart_action_value, smart_action_status);
+            // self.play_audio_file(&audio_file);
+
+            // Now the text is readed by piper speech to text directly
+            let _ = match smart_action_status {
+                Some(smart_action_status) => {
+                    self.play_sound_from_text(&format!("{}", smart_action_status), "en")
+                }
+                None => {
+                    self.play_sound_from_text(&format!("{}", smart_action_value), "en")
+                }
+            };
         } else {
             let _ = match smart_action_status {
                 Some(smart_action_status) => println!(
@@ -83,6 +124,7 @@ impl AudioPlayerManager {
     fn play_audio_file(&self, audio_file_path: &str) {
         println!("Playing audio file: {}", audio_file_path);
 
+        // TODO: redirect output to /dev/null
         // ffplay -v 0 -nodisp -autoexit dictate-text-on.mp3
         if let Err(e) = Command::new("ffplay")
             .arg("-v")

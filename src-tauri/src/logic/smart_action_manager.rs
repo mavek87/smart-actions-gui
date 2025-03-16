@@ -140,6 +140,7 @@ impl SmartActionManager {
                 // TODO: possible deadlock if the next unwrap fails and this lock is not released...
                 let current_smart_action_value = current_smart_action_value.lock().unwrap();
 
+                // TODO: completed successfully should not be called by speech to text
                 audio_player_manager
                     .lock()
                     .unwrap()
@@ -189,6 +190,14 @@ impl SmartActionManager {
             self.menu_manager.set_action_stopped();
 
             self.tray_icon_manager.show_waiting_icon();
+
+            let current_smart_action_state = self.smart_action_state.lock().unwrap();
+            let current_smart_action_value = current_smart_action_state.value.lock().unwrap();
+
+            self.audio_player_manager.play_sound_for_smart_action(
+                &current_smart_action_value,
+                Some(SmartActionStatus::WAITING),
+            );
 
             if let Err(e) = self
                 .app_handle
@@ -262,8 +271,7 @@ impl SmartActionManager {
     }
 
     fn try_to_kill_process_or_print_error_if_it_fail(&self, system_process_name: &str) {
-        let mut command;
-        command = Command::new("pkill")
+        Command::new("pkill")
             .arg("-9")
             .arg("-f")
             .arg(system_process_name)

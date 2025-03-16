@@ -70,7 +70,7 @@ pub fn run() {
             //let lang_str = "unset";
 
             // https://v2.tauri.app/learn/window-menu/
-implemen            let lang_sub_menu_item_unset = CheckMenuItemBuilder::with_id("unset", "Unset")
+            let lang_sub_menu_item_unset = CheckMenuItemBuilder::with_id("unset", "Unset")
                 .checked(true)
                 .build(app)?;
 
@@ -284,7 +284,7 @@ implemen            let lang_sub_menu_item_unset = CheckMenuItemBuilder::with_id
                 ],
             };
 
-            let audio_player_manager = AudioPlayerManager::new(true);
+            let audio_player_manager = AudioPlayerManager::new(app_config.clone(), true);
 
             let app_state = AppState {
                 smart_action_manager: SmartActionManager::new(
