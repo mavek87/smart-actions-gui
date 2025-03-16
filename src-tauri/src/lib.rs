@@ -171,12 +171,18 @@ pub fn run() {
                             .set_checked(event.id().0.as_str() == "it")
                             .expect("Change check error");
                     }
-                    "audio_enabled" => {
-                        // TODO: fix bug
-                        audio_sub_item_enabled
-                            .set_checked(event.id().0.as_str() == "audio_enabled")
-                            .expect("Change check error");
-                    }
+                    "audio_enabled" => match audio_sub_item_enabled.is_checked() {
+                        Ok(is_checked) => {
+                            audio_sub_item_enabled
+                                .set_checked(is_checked)
+                                .expect("Change check error");
+                            let app_state: State<AppState> = app.state();
+                            app_state.smart_action_manager.set_audio_enable(is_checked);
+                        }
+                        Err(e) => {
+                            eprintln!("Error updating audio_enabled: {}", e);
+                        }
+                    },
                     _ => {
                         println!("menu item {:?} not handled", event.id);
                     }

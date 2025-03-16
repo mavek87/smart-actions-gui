@@ -1,7 +1,7 @@
 use crate::domain::constants::AUDIO_FOLDER;
 use crate::domain::smart_action::SmartActionStatus;
 use std::process::Command;
-
+use std::sync::{Arc, Mutex};
 //
 // Tool used to generate voices:
 //
@@ -12,24 +12,26 @@ use std::process::Command;
 
 #[derive(Debug, Clone)]
 pub struct AudioPlayerManager {
-    is_audio_enabled: bool,
+    is_audio_enabled: Arc<Mutex<bool>>,
 }
 
 impl AudioPlayerManager {
     pub fn new(is_audio_enabled: bool) -> Self {
-        Self { is_audio_enabled }
+        Self {
+            is_audio_enabled: Arc::new(Mutex::new(is_audio_enabled)),
+        }
     }
 
-    // pub fn set_audio_enabled(&mut self, is_audio_enabled: bool) {
-    //     self.is_audio_enabled = is_audio_enabled;
-    // }
+    pub fn set_audio_enabled(&self, is_audio_enabled: bool) {
+        *self.is_audio_enabled.lock().unwrap() = is_audio_enabled;
+    }
 
     pub fn play_sound_for_smart_action(
         &self,
         smart_action_value: &str,
         smart_action_status: Option<SmartActionStatus>,
     ) {
-        if self.is_audio_enabled {
+        if *self.is_audio_enabled.lock().unwrap() {
             let audio_file = self.find_audio_file(smart_action_value, smart_action_status);
             self.play_audio_file(&audio_file);
         } else {
