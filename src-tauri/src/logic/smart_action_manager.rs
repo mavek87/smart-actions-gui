@@ -4,6 +4,7 @@ use crate::logic::audio_player_manager::AudioPlayerManager;
 use crate::logic::menu_manager::MenuManager;
 use crate::logic::tray_icon_manager::TrayIconManager;
 use std::collections::HashMap;
+use std::io::Error;
 use std::process::{Command, ExitStatus};
 use std::sync::{Arc, Mutex, MutexGuard};
 use std::thread;
@@ -20,12 +21,13 @@ pub struct SmartActionManager {
     is_waiting: Arc<Mutex<bool>>,
 }
 
-const REQUEST_TO_UI_NEXT_SMART_ACTION: &str = "request_to_ui_next_smart_action";
-const REQUEST_TO_UI_PREVIOUS_SMART_ACTION: &str = "request_to_ui_previous_smart_action";
-const REQUEST_TO_UI_RECORDING_START: &str = "smart_action_recording_start";
-const REQUEST_TO_UI_WAITING_START: &str = "smart_action_waiting_start";
-const REQUEST_TO_UI_WAITING_STOP: &str = "smart_action_waiting_stop";
-const REQUEST_TO_UI_WAITING_ERROR: &str = "smart_action_waiting_error";
+const EVENT_TO_UI_NEXT_SMART_ACTION: &str = "event_to_ui_next_smart_action";
+const EVENT_TO_UI_PREVIOUS_SMART_ACTION: &str = "event_to_ui_previous_smart_action";
+const EVENT_TO_UI_RECORDING_START: &str = "event_to_ui_smart_action_recording_start";
+const EVENT_TO_UI_WAITING_START: &str = "event_to_ui_smart_action_waiting_start";
+const EVENT_TO_UI_WAITING_STOP: &str = "event_to_ui_smart_action_waiting_stop";
+const EVENT_TO_UI_WAITING_ERROR: &str = "event_to_ui_smart_action_waiting_error";
+const EVENT_TO_UI_ENABLE_AUDIO_CHANGED: &str = "event_to_ui_enable_audio_changed";
 
 impl SmartActionManager {
     pub fn new(
@@ -49,15 +51,15 @@ impl SmartActionManager {
     }
 
     pub fn change_with_next_smart_action(&self) {
-        self.app_handle
-            .emit(&REQUEST_TO_UI_NEXT_SMART_ACTION, "")
-            .expect("Failed to emit request_to_ui_next_smart_action");
+        if let Err(e) = self.app_handle.emit(&EVENT_TO_UI_NEXT_SMART_ACTION, "") {
+            eprintln!("Error during emission: {}", e);
+        }
     }
 
     pub fn change_with_previous_smart_action(&self) {
-        self.app_handle
-            .emit(&REQUEST_TO_UI_PREVIOUS_SMART_ACTION, "")
-            .expect("Failed to emit request_to_ui_previous_smart_action");
+        if let Err(e) = self.app_handle.emit(&EVENT_TO_UI_PREVIOUS_SMART_ACTION, "") {
+            eprintln!("Error during emission: {}", e);
+        }
     }
 
     pub fn change_current_smart_action(&self, new_smart_action: SmartAction) {
@@ -154,7 +156,7 @@ impl SmartActionManager {
 
         if let Err(e) = self
             .app_handle
-            .emit(&REQUEST_TO_UI_RECORDING_START, "Start recording...")
+            .emit(&EVENT_TO_UI_RECORDING_START, "Start recording...")
         {
             eprintln!("Error during emission: {}", e);
         }
@@ -201,7 +203,7 @@ impl SmartActionManager {
 
             if let Err(e) = self
                 .app_handle
-                .emit(&REQUEST_TO_UI_WAITING_START, "Waiting response...")
+                .emit(&EVENT_TO_UI_WAITING_START, "Waiting response...")
             {
                 eprintln!("Error during emission: {}", e);
             }
@@ -232,9 +234,27 @@ impl SmartActionManager {
         self.menu_manager.set_vocal_audio_menu_item_enabled(false)
     }
 
+    pub fn is_audio_enabled(&self) -> Result<bool, Error> {
+        self.audio_player_manager.is_audio_enabled()
+    }
+
     pub fn set_audio_enable(&self, is_audio_enabled: bool) {
-        self.audio_player_manager
-            .set_audio_enabled(is_audio_enabled);
+        if let Err(e) = self
+            .audio_player_manager
+            .set_audio_enabled(is_audio_enabled)
+        {
+            eprintln!(
+                "Error during setting audio enabled ({}) {}",
+                is_audio_enabled, e
+            );
+        } else {
+            if let Err(e) = self
+                .app_handle
+                .emit(&EVENT_TO_UI_ENABLE_AUDIO_CHANGED, is_audio_enabled)
+            {
+                eprintln!("Error during emission: {}", e);
+            }
+        }
     }
 
     fn build_cmd_smart_action(
@@ -285,7 +305,7 @@ impl SmartActionManager {
 
             smart_action_status = SmartActionStatus::COMPLETED;
 
-            if let Err(e) = app_handle_guard.emit(&REQUEST_TO_UI_WAITING_STOP, "Stop waiting...") {
+            if let Err(e) = app_handle_guard.emit(&EVENT_TO_UI_WAITING_STOP, "Stop waiting...") {
                 eprintln!("Error during emission: {}", e);
                 drop(app_handle_guard);
             }
@@ -295,7 +315,7 @@ impl SmartActionManager {
             smart_action_status = SmartActionStatus::FAILED;
 
             if let Err(e) =
-                app_handle_guard.emit(&REQUEST_TO_UI_WAITING_ERROR, "Error during waiting...")
+                app_handle_guard.emit(&EVENT_TO_UI_WAITING_ERROR, "Error during waiting...")
             {
                 eprintln!("Error during emission: {}", e);
                 drop(app_handle_guard);
@@ -306,7 +326,7 @@ impl SmartActionManager {
             smart_action_status = SmartActionStatus::FAILED;
 
             if let Err(e) =
-                app_handle_guard.emit(&REQUEST_TO_UI_WAITING_ERROR, "Error during waiting...")
+                app_handle_guard.emit(&EVENT_TO_UI_WAITING_ERROR, "Error during waiting...")
             {
                 eprintln!("Error during emission: {}", e);
                 drop(app_handle_guard);

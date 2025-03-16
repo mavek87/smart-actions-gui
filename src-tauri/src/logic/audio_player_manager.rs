@@ -1,5 +1,6 @@
 use crate::domain::constants::AUDIO_FOLDER;
 use crate::domain::smart_action::SmartActionStatus;
+use std::io::{Error, ErrorKind};
 use std::process::Command;
 use std::sync::{Arc, Mutex};
 //
@@ -22,8 +23,24 @@ impl AudioPlayerManager {
         }
     }
 
-    pub fn set_audio_enabled(&self, is_audio_enabled: bool) {
-        *self.is_audio_enabled.lock().unwrap() = is_audio_enabled;
+    pub fn set_audio_enabled(&self, is_audio_enabled: bool) -> Result<(), Error> {
+        match self.is_audio_enabled.lock() {
+            Ok(mut guard_is_audio_enabled) => {
+                *guard_is_audio_enabled = is_audio_enabled;
+                Ok(())
+            }
+            Err(e) => Err(Error::new(ErrorKind::Other, format!("Error: {}", e))),
+        }
+    }
+
+    pub fn is_audio_enabled(&self) -> Result<bool, Error> {
+        match self.is_audio_enabled.lock() {
+            Ok(guard_is_audio_enabled) => {
+                let is_audio_enabled = *guard_is_audio_enabled;
+                Ok(is_audio_enabled)
+            }
+            Err(e) => Err(Error::new(ErrorKind::Other, format!("Error: {}", e))),
+        }
     }
 
     pub fn play_sound_for_smart_action(

@@ -24,6 +24,7 @@ async function ui_request_stop_action() {
 let actions = [];
 let currentSmartAction;
 let inputListeners = [];
+let is_audio_enabled = true;
 
 const form_action = document.getElementById("form_action");
 const select_action = document.getElementById("select_action");
@@ -52,59 +53,67 @@ button_submitFormActionStopRecording.addEventListener('click', async function (e
 
 window.addEventListener("DOMContentLoaded", async () => {
     function listen_smart_action_server_events() {
-        listen('request_to_ui_next_smart_action', event => {
+        listen('event_to_ui_next_smart_action', event => {
             console.log('request_to_ui_next_smart_action - Event received:', event.payload);
             selectNextAction();
         });
-        listen('request_to_ui_previous_smart_action', event => {
+        listen('event_to_ui_previous_smart_action', event => {
             console.log('request_to_ui_previous_smart_action - Event received:', event.payload);
             selectPreviousAction();
         })
-        listen('smart_action_recording_start', (event) => {
+        listen('event_to_ui_smart_action_recording_start', (event) => {
             console.log('Event received:', event.payload);
 
-            // recording start
             button_submitFormAction.setAttribute("hidden", true);
             button_submitFormActionStopRecording.removeAttribute("hidden");
             button_submitFormActionWait.textContent = event.payload;
         });
-        listen('smart_action_waiting_start', (event) => {
+        listen('event_to_ui_smart_action_waiting_start', (event) => {
             console.log('Event received:', event.payload);
 
-            // loading start
             button_submitFormAction.setAttribute("hidden", true);
             button_submitFormActionStopRecording.setAttribute("hidden", true);
             button_submitFormActionWait.removeAttribute("hidden");
             button_submitFormActionWait.textContent = event.payload;
         });
-        listen('smart_action_waiting_stop', (event) => {
+        listen('event_to_ui_smart_action_waiting_stop', (event) => {
             console.log('Event received:', event.payload);
 
-            // loading stop
             button_submitFormAction.removeAttribute("hidden");
             button_submitFormActionStopRecording.setAttribute("hidden", true);
             button_submitFormActionWait.setAttribute("hidden", true);
         });
-        listen('smart_action_waiting_error', (event) => {
+        listen('event_to_ui_smart_action_waiting_error', (event) => {
             console.log('Event received:', event.payload);
 
             // TODO: handle the error
 
-            // loading stop
             button_submitFormAction.removeAttribute("hidden");
             button_submitFormActionStopRecording.setAttribute("hidden", true);
             button_submitFormActionWait.setAttribute("hidden", true);
+        });
+        listen('event_to_ui_enable_audio_changed', (event) => {
+            console.log('event_to_ui_enable_audio_changed received:', event.payload);
+            is_audio_enabled = event.payload;
+            let select_output_audio_voice = document.getElementById("form-action-props_select_output_audio_voice");
+            if (select_output_audio_voice) {
+                select_output_audio_voice.disabled = !is_audio_enabled;
+                if (!is_audio_enabled) {
+                    select_output_audio_voice.value = "false";
+                }
+            }
         });
     }
 
     listen_smart_action_server_events();
 
-    const jsonActions = await ui_notify_startup();
+    const jsonStartupData = await ui_notify_startup();
 
-    if (jsonActions) {
-        const actionsWrapperObj = JSON.parse(jsonActions);
+    if (jsonStartupData) {
+        const startupDataObject = JSON.parse(jsonStartupData);
 
-        actions = actionsWrapperObj?.actions || [];
+        actions = startupDataObject?.actions || [];
+        is_audio_enabled = startupDataObject?.is_audio_enabled;
 
         for (const [action_key, action_props] of Object.entries(actions)) {
             const option = document.createElement('option');
@@ -331,10 +340,13 @@ function buildElementForActionType(action_key, action_value) {
             const outputAudioVoice = {
                 "tooltip": "If it's true the output text will also be read by a speech to text software, otherwise if false this doesn't happen",
                 "values": [
-                    {"value": "true", "name": "true"},
                     {"value": "false", "name": "false"},
+                    {"value": "true", "name": "true"},
                 ]
             }
+
+            outputAudioVoice.defaultValue = `${is_audio_enabled}`;
+
             return buildSelectElement(action_key, action_value, outputAudioVoice);
         default:
             return buildDefaultElement(action_key, action_value);
@@ -393,6 +405,9 @@ function buildSelectElement(action_key, action_value, optionsMetadata) {
         elementInstance: select,
         listenerFn: selectChangeListener
     });
+    if (action_key === "output_audio_voice" && !is_audio_enabled) {
+        select.disabled = true;
+    }
 
     if (optionsMetadata.tooltip) {
         select.title = optionsMetadata.tooltip;

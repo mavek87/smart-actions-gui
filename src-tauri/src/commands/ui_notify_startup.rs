@@ -1,22 +1,27 @@
 use crate::domain::actions_metadata::ActionsMetadata;
 use crate::domain::app_state::AppState;
+use crate::domain::constants::DEFAULT_CONFIG_FILE;
 use crate::logic::action_config_parser::ActionConfigParser;
 use std::io::Read;
 use std::process::{Command, Stdio};
 use tauri::{command, State};
-use crate::domain::constants::DEFAULT_CONFIG_FILE;
 
 #[command]
 pub fn ui_notify_startup(state: State<AppState>) -> String {
     let action_names: [&str; 3] = ["dictate_text", "ai_reply_text", "audio_to_text"];
 
-    let mut actions_metadata = ActionsMetadata::new();
+    let smart_action_manager = &state.smart_action_manager;
+    let is_audio_enabled = smart_action_manager.is_audio_enabled().unwrap_or(false);
+    let mut actions_metadata = ActionsMetadata::new(is_audio_enabled);
 
     let config_manager = state.config_manager.lock().unwrap();
 
     let config = config_manager
         .read_config(DEFAULT_CONFIG_FILE)
-        .expect(&format!("Error reading config file {}", DEFAULT_CONFIG_FILE));
+        .expect(&format!(
+            "Error reading config file {}",
+            DEFAULT_CONFIG_FILE
+        ));
 
     for action_name in &action_names {
         let action_output = Command::new("bash")
