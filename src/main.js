@@ -30,6 +30,7 @@ let actions = [];
 let currentSmartAction;
 let inputListeners = [];
 let is_audio_enabled = true;
+let current_language;
 
 const form_action = document.getElementById("form_action");
 const select_action = document.getElementById("select_action");
@@ -58,6 +59,10 @@ button_submitFormActionStopRecording.addEventListener('click', async function (e
 
 window.addEventListener("DOMContentLoaded", async () => {
     function listen_smart_action_server_events() {
+        listen('event_to_ui_change_current_language_action', event => {
+            console.log('event_to_ui_change_current_language_action - Event received:', event.payload);
+            current_language = event.payload;
+        });
         listen('event_to_ui_next_smart_action', event => {
             console.log('request_to_ui_next_smart_action - Event received:', event.payload);
             selectNextAction();
@@ -112,13 +117,14 @@ window.addEventListener("DOMContentLoaded", async () => {
 
     listen_smart_action_server_events();
 
-    const jsonStartupData = await ui_notify_startup();
+    const jsonStartupMetadata = await ui_notify_startup();
 
-    if (jsonStartupData) {
-        const startupDataObject = JSON.parse(jsonStartupData);
+    if (jsonStartupMetadata) {
+        const startupMetadata = JSON.parse(jsonStartupMetadata);
 
-        actions = startupDataObject?.actions || [];
-        is_audio_enabled = startupDataObject?.is_audio_enabled;
+        actions = startupMetadata?.actions || [];
+        is_audio_enabled = startupMetadata?.is_audio_enabled;
+        current_language = startupMetadata?.current_language;
 
         for (const [action_key, action_props] of Object.entries(actions)) {
             const option = document.createElement('option');
@@ -230,7 +236,6 @@ function populateViewSettingsForAction(action) {
 }
 
 function buildElementForActionType(action, action_key, action_value) {
-    console.log(JSON.stringify(action))
     let selectMetadata;
     switch (action.value) {
         case "dictate_text":
@@ -275,7 +280,11 @@ function buildSelectElement(action_key, action_value, optionsMetadata) {
         select.appendChild(uiOption);
     });
 
-    select.value = optionsMetadata.defaultValue || action_value;
+    if (action_key === "language") {
+        select.value = optionsMetadata.defaultValue || current_language;
+    } else {
+        select.value = optionsMetadata.defaultValue || action_value;
+    }
     select.id = 'form-action-props_select_' + action_key;
     select.name = action_key;
     const selectChangeListener = function (event) {

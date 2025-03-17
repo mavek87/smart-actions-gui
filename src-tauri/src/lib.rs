@@ -5,12 +5,13 @@ mod logic;
 use std::collections::HashMap;
 use std::string::ToString;
 use std::sync::Mutex;
+use sys_locale::get_locale;
 use tauri::{
     menu::{
         AboutMetadataBuilder, CheckMenuItemBuilder, MenuBuilder, MenuItemBuilder, SubmenuBuilder,
     },
     tray::TrayIconBuilder,
-    Manager, State,
+    Emitter, Manager, State,
 };
 
 use commands::{
@@ -23,12 +24,14 @@ use domain::{app_state::AppState, smart_action::SmartAction};
 
 use crate::commands::ui_notify_change_element_in_action::ui_notify_change_element_in_action;
 use crate::domain::constants::{
-    APP_NAME, APP_VERSION, AUTHORS, DEFAULT_CONFIG_FILE, WEBSITE, WEBSITE_LABEL,
+    APP_NAME, APP_VERSION, AUTHORS, DEFAULT_CONFIG_FILE,
+    EVENT_TO_UI_CHANGE_CURRENT_LANGUAGE_ACTION, WEBSITE, WEBSITE_LABEL,
 };
+use crate::domain::language::Language;
 use logic::{
     audio_player_manager::AudioPlayerManager, config_manager::ConfigManager,
-    menu_manager::MenuManager, smart_action_manager::SmartActionManager,
-    tray_icon_manager::TrayIconManager,
+    language_manager::LanguageManager, menu_manager::MenuManager,
+    smart_action_manager::SmartActionManager, tray_icon_manager::TrayIconManager,
 };
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -46,6 +49,15 @@ pub fn run() {
 
     tauri::Builder::default()
         .setup(|app| {
+            let lang_code = get_locale()
+                .map(|s| s.split('-').next().unwrap_or("unset").to_string())
+                .unwrap_or_else(|| "unset".to_string());
+
+            println!("System language detected: {}", &lang_code);
+
+            let mut language_manager =
+                LanguageManager::new(Language::from_str(&lang_code).unwrap_or(Language::UNSET));
+
             let action_name_menu_item = MenuItemBuilder::new("Dictate Text")
                 .id("action_name_menu_item")
                 .enabled(false)
@@ -66,20 +78,19 @@ pub fn run() {
                 .enabled(false)
                 .build(app)?;
 
-            // TODO: use the current language if present (A language manager could be created too)
-            //let lang_str = "unset";
+            let lang_str_code = language_manager.get_current_language().code();
 
             // https://v2.tauri.app/learn/window-menu/
             let lang_sub_menu_item_unset = CheckMenuItemBuilder::with_id("unset", "Unset")
-                .checked(true)
+                .checked(lang_str_code == "")
                 .build(app)?;
 
             let lang_sub_menu_item_en = CheckMenuItemBuilder::with_id("en", "English")
-                .checked(false)
+                .checked(lang_str_code == "en")
                 .build(app)?;
 
             let lang_sub_menu_item_it = CheckMenuItemBuilder::with_id("it", "Italian")
-                .checked(false)
+                .checked(lang_str_code == "it")
                 .build(app)?;
 
             let language_submenu = SubmenuBuilder::new(app, "Language")
@@ -173,15 +184,30 @@ pub fn run() {
                         app.exit(0);
                     }
                     "unset" | "en" | "it" => {
+                        let selected_language = event.id().0.as_str();
+
                         lang_sub_menu_item_unset
-                            .set_checked(event.id().0.as_str() == "unset")
+                            .set_checked(selected_language == "unset")
                             .expect("Change check error");
                         lang_sub_menu_item_en
-                            .set_checked(event.id().0.as_str() == "en")
+                            .set_checked(selected_language == "en")
                             .expect("Change check error");
-                        audio_sub_menu_item_enabled
-                            .set_checked(event.id().0.as_str() == "it")
+                        lang_sub_menu_item_it
+                            .set_checked(selected_language == "it")
                             .expect("Change check error");
+
+                        let app_state: State<AppState> = app.state();
+
+                        app_state
+                            .language_manager
+                            .set_current_language_as_str(&selected_language);
+
+                        if let Err(e) = app.emit(
+                            &EVENT_TO_UI_CHANGE_CURRENT_LANGUAGE_ACTION,
+                            app_state.language_manager.get_current_language().code(),
+                        ) {
+                            eprintln!("Error during emission: {}", e);
+                        }
                     }
                     "audio_enabled" => match audio_sub_menu_item_enabled.is_checked() {
                         Ok(is_checked) => {
@@ -298,6 +324,7 @@ pub fn run() {
                 tray_icon_manager: Mutex::new(tray_icon_manager),
                 config_manager: Mutex::new(config_manager),
                 audio_player_manager: Mutex::new(audio_player_manager),
+                language_manager,
             };
 
             app.manage(app_state);
@@ -305,7 +332,6 @@ pub fn run() {
             Ok(())
         })
         // .manage(app_state)
-        // .plugin(tauri_plugin_opener::init())
         .invoke_handler(tauri::generate_handler![
             ui_notify_change_action,
             ui_notify_change_element_in_action,

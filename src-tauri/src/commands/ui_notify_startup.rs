@@ -1,6 +1,6 @@
-use crate::domain::actions_metadata::ActionsMetadata;
 use crate::domain::app_state::AppState;
 use crate::domain::constants::DEFAULT_CONFIG_FILE;
+use crate::domain::startup_ui_metadata::StartupUIMetadata;
 use crate::logic::action_config_parser::ActionConfigParser;
 use std::io::Read;
 use std::process::{Command, Stdio};
@@ -9,14 +9,21 @@ use tauri::{command, State};
 #[command]
 pub fn ui_notify_startup(state: State<AppState>) -> String {
     // TODO: find a way to automatically read all the actions without hardcoding an array
-    let action_names: [&str; 4] = ["dictate_text", "ai_reply_text", "audio_to_text", "text_to_speech"];
+    let action_names: [&str; 4] = [
+        "dictate_text",
+        "ai_reply_text",
+        "audio_to_text",
+        "text_to_speech",
+    ];
 
     let smart_action_manager = &state.smart_action_manager;
     let is_audio_enabled = smart_action_manager.is_audio_enabled().unwrap_or(false);
-    let mut actions_metadata = ActionsMetadata::new(is_audio_enabled);
+    let current_language = state.language_manager.get_current_language();
+
+    let mut startup_ui_metadata =
+        StartupUIMetadata::new(is_audio_enabled, current_language.code().to_string());
 
     let config_manager = state.config_manager.lock().unwrap();
-
     let config = config_manager
         .read_config(DEFAULT_CONFIG_FILE)
         .expect(&format!(
@@ -49,13 +56,13 @@ pub fn ui_notify_startup(state: State<AppState>) -> String {
 
         let action_config = ActionConfigParser::parse_from_string(&action_config_raw_output);
 
-        actions_metadata
+        startup_ui_metadata
             .actions
             .insert(action_name.to_string(), action_config);
     }
 
     let json_actions_metadata =
-        serde_json::to_string(&actions_metadata).expect("Failed to parse JSON");
+        serde_json::to_string(&startup_ui_metadata).expect("Failed to parse JSON");
 
     json_actions_metadata
 }
