@@ -79,20 +79,19 @@ impl AudioPlayerManager {
         smart_action_status: Option<SmartActionStatus>,
     ) {
         if *self.is_audio_enabled.lock().unwrap() {
-            // TODO: the phisical files are not used anymore... used again for the moment
-            let audio_file = self.find_audio_file(smart_action_value, smart_action_status);
-            self.play_audio_file(&audio_file);
+            // TODO: the phisical files are not used anymore
+            // let audio_file = self.find_audio_file(smart_action_value, smart_action_status);
+            // self.play_audio_file(&audio_file);
 
-            // TODO: this causes a lot of troubles because runs concurrently with the smart actions and alter the smart action output file...
             // Now the text is readed by piper speech to text directly
-            // let _ = match smart_action_status {
-            //     Some(smart_action_status) => {
-            //         self.play_sound_from_text(&format!("{}", smart_action_status), "en")
-            //     }
-            //     None => {
-            //         self.play_sound_from_text(&format!("{}", smart_action_value), "en")
-            //     }
-            // };
+            let _ = match smart_action_status {
+                Some(smart_action_status) => {
+                    self.play_sound_from_text(&format!("{}", smart_action_status), "en")
+                }
+                None => {
+                    self.play_sound_from_text(&format!("{}", smart_action_value), "en")
+                }
+            };
         } else {
             let _ = match smart_action_status {
                 Some(smart_action_status) => println!(
