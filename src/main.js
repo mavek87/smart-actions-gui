@@ -1,6 +1,11 @@
 const {invoke} = window.__TAURI__.core;
 const {listen} = window.__TAURI__.event;
 
+import {buildMetadataIfIsSelect as buildDictateTextMetadataIfIsSelect} from './dictate_text.js';
+import {buildMetadataIfIsSelect as buildAiReplyTextMetadataIfIsSelect} from './ai_reply_text.js';
+import {buildMetadataIfIsSelect as buildAudioToTextMetadataIfIsSelect} from './audio_to_text.js';
+import {buildMetadataIfIsSelect as buildTextToSpeechMetadataIfIsSelect} from './text_to_speech.js';
+
 async function ui_notify_startup() {
     return await invoke("ui_notify_startup", {});
 }
@@ -187,9 +192,10 @@ function extractSmartActionFromForm() {
 }
 
 function populateViewForAction() {
-    const actionValue = select_action.value;
+    let actionValue = select_action.value;
     const action = actions[actionValue]
     input_ActionDescription.value = action.description;
+    action.value = actionValue;
     populateViewSettingsForAction(action);
 }
 
@@ -213,7 +219,7 @@ function populateViewSettingsForAction(action) {
             div_actionProps.appendChild(divWithGrid);
         }
 
-        const element = buildElementForActionType(action_default_key, action_default_value);
+        const element = buildElementForActionType(action, action_default_key, action_default_value);
 
         divWithGrid.appendChild(element);
 
@@ -223,162 +229,39 @@ function populateViewSettingsForAction(action) {
     console.log(`attached ${inputListeners.length} input listeners`)
 }
 
-function convertSnakeToSpace(str) {
-    return str.replace(/_/g, ' ');
-}
-
-function convertFirstCharToUppercase(str) {
-    return str.charAt(0).toUpperCase() + str.slice(1);
-}
-
-function buildElementForActionType(action_key, action_value) {
-    switch (action_key) {
-        case "audio_sampling_rate":
-            const audioSamplingRate = {
-                "tooltip": "This is the sampling rate of the recording",
-                "values": [
-                    {"value": "44100", "name": "44100"},
-                    {"value": "48000", "name": "48000"},
-                ]
+function buildElementForActionType(action, action_key, action_value) {
+    console.log(JSON.stringify(action))
+    let selectMetadata;
+    switch (action.value) {
+        case "dictate_text":
+            selectMetadata = buildDictateTextMetadataIfIsSelect(action_key);
+            if (selectMetadata) {
+                return buildSelectElement(action_key, action_value, selectMetadata);
             }
-            return buildSelectElement(action_key, action_value, audioSamplingRate);
-        case "ai_provider":
-            const aiProviderOptionsMetadata = {
-                "tooltip": "This is the AI provider that will be used to generate the response",
-                "values": [
-                    {"value": "pollinations", "name": "Pollinations"},
-                    {"value": "duckduckgo", "name": "DuckDuckGo"},
-                    {"value": "ollama", "name": "Ollama"},
-                    {"value": "phind", "name": "Phind"},
-                ]
+            break;
+        case "audio_to_text":
+            selectMetadata = buildAudioToTextMetadataIfIsSelect(action_key);
+            if (selectMetadata) {
+                return buildSelectElement(action_key, action_value, selectMetadata);
             }
-            return buildSelectElement(action_key, action_value, aiProviderOptionsMetadata);
-        case "language":
-            const languageOptionsMetadata = {
-                "defaultValue": "",
-                "tooltip": "Suggest a language to use by the speech to text software, otherwise it will find out what language is spoken by the user",
-                "values": [
-                    {"value": "", "name": "None"},
-                    {"value": "en", "name": "English"},
-                    {"value": "it", "name": "Italian"},
-                    {"value": "es", "name": "Spanish"},
-                    {"value": "fr", "name": "French"},
-                ]
+            break;
+        case "ai_reply_text":
+            selectMetadata = buildAiReplyTextMetadataIfIsSelect(action_key, select_action, is_audio_enabled);
+            if (selectMetadata) {
+                return buildSelectElement(action_key, action_value, selectMetadata);
             }
-            return buildSelectElement(action_key, action_value, languageOptionsMetadata);
-        case "selection_target":
-            const selectionTargetOptionsMetadata = {
-                "defaultValue": "none",
-                "tooltip": "If 'none' isn't selected the AI can take into account the selected text or the text copied into the clipboard",
-                // NOTE: terminal doesn't make sense in a GUI, so it's omitted
-                "values": [
-                    {"value": "none", "name": "None"},
-                    {"value": "primary", "name": "Selected Text"},
-                    {"value": "clipboard", "name": "Copied Text"},
-                ]
+            break;
+        case "text_to_speech":
+            selectMetadata = buildTextToSpeechMetadataIfIsSelect(action_key);
+            if (selectMetadata) {
+                return buildSelectElement(action_key, action_value, selectMetadata);
             }
-            return buildSelectElement(action_key, action_value, selectionTargetOptionsMetadata);
-        case "output_destination":
-            const outputDestinationOptionsMetadata = {
-                "defaultValue": "display",
-                // NOTE: terminal doesn't make sense in a GUI, so it's omitted
-                "values": [
-                    {"value": "display", "name": "Display"},
-                ]
-            }
-            return buildSelectElement(action_key, action_value, outputDestinationOptionsMetadata);
-        case "model":
-            const modelOptionsMetadata = {
-                "defaultValue": "medium",
-                "tooltip": "The model used by the speach to text software (higher = more accurate, lower = faster)",
-                "values": [
-                    {"value": "small", "name": "Small"},
-                    {"value": "medium", "name": "Medium"},
-                    {"value": "large", "name": "Large"},
-                ]
-            }
-            return buildSelectElement(action_key, action_value, modelOptionsMetadata);
-        case "task":
-            const taskOptionsMetadata = {
-                "defaultValue": "transcribe",
-                "tooltip": "The speech to text model can transcribe what it hears or translate it into english",
-                "values": [
-                    {"value": "transcribe", "name": "Transcribe"},
-                    {"value": "translate", "name": "Translate"},
-                ]
-            }
-            return buildSelectElement(action_key, action_value, taskOptionsMetadata);
-        case "output_format":
-            const outputFormatOptionsMetadata = {
-                "tooltip": "The output format can be text format (multiple lines) or string format (one line)",
-                "values": [
-                    {"value": "string", "name": "String"},
-                    {"value": "text", "name": "Text"},
-                ]
-            }
-
-            if (select_action.value === "ai_reply_text") {
-                outputFormatOptionsMetadata.values.push(
-                    {"value": "code_string", "name": "Code String"},
-                    {"value": "code_text", "name": "Code Text"},
-                )
-            }
-
-            return buildSelectElement(action_key, action_value, outputFormatOptionsMetadata);
-        case "output_terminator":
-            const outputTerminatorOptionsMetadata = {
-                // NOTE: probably text is a better default here for a GUI instead of string which is better for the CLI software
-                "defaultValue": "none",
-                "tooltip": "The output of the smart action can end with a Enter character or nothing more than the output itself",
-                "values": [
-                    {"value": "none", "name": "None"},
-                    {"value": "enter", "name": "Enter"},
-                ]
-            }
-            return buildSelectElement(action_key, action_value, outputTerminatorOptionsMetadata);
-        case "output_audio_voice":
-            const outputAudioVoice = {
-                "tooltip": "If it's true the output text will also be read by a speech to text software, otherwise if false this doesn't happen",
-                "values": [
-                    {"value": "false", "name": "false"},
-                    {"value": "true", "name": "true"},
-                ]
-            }
-
-            outputAudioVoice.defaultValue = `${is_audio_enabled}`;
-
-            return buildSelectElement(action_key, action_value, outputAudioVoice);
+            break;
         default:
-            return buildDefaultElement(action_key, action_value);
+            console.log(`Unknown action: ${action_key}`);
+            break;
     }
-}
-
-function buildDefaultElement(action_key, action_value) {
-    const inputText = document.createElement('input');
-    inputText.type = 'text';
-    inputText.value = action_value || "";
-    inputText.id = 'form-action-props_input_' + action_key;
-    inputText.name = action_key;
-    const inputChangeListener = function (event) {
-        console.log(event.target.value);
-        ui_notify_change_element_in_action(extractSmartActionJsonFromForm());
-    }
-    inputText.addEventListener('input', inputChangeListener);
-    inputListeners.push({
-        elementId: inputText.id,
-        elementInstance: inputText,
-        listenerFn: inputChangeListener
-    });
-
-    const labelText = document.createElement('label');
-    labelText.id = 'form-action-props_label_' + action_key
-    labelText.htmlFor = inputText.id
-    labelText.textContent = convertFirstCharToUppercase(convertSnakeToSpace(action_key));
-
-    const innerDiv = document.createElement("div");
-    innerDiv.appendChild(labelText);
-    innerDiv.appendChild(inputText);
-    return innerDiv;
+    return buildDefaultElement(action_key, action_value);
 }
 
 function buildSelectElement(action_key, action_value, optionsMetadata) {
@@ -421,4 +304,40 @@ function buildSelectElement(action_key, action_value, optionsMetadata) {
     innerDiv.appendChild(labelText);
     innerDiv.appendChild(select);
     return innerDiv;
+}
+
+function buildDefaultElement(action_key, action_value) {
+    const inputText = document.createElement('input');
+    inputText.type = 'text';
+    inputText.value = action_value || "";
+    inputText.id = 'form-action-props_input_' + action_key;
+    inputText.name = action_key;
+    const inputChangeListener = function (event) {
+        console.log(event.target.value);
+        ui_notify_change_element_in_action(extractSmartActionJsonFromForm());
+    }
+    inputText.addEventListener('input', inputChangeListener);
+    inputListeners.push({
+        elementId: inputText.id,
+        elementInstance: inputText,
+        listenerFn: inputChangeListener
+    });
+
+    const labelText = document.createElement('label');
+    labelText.id = 'form-action-props_label_' + action_key
+    labelText.htmlFor = inputText.id
+    labelText.textContent = convertFirstCharToUppercase(convertSnakeToSpace(action_key));
+
+    const innerDiv = document.createElement("div");
+    innerDiv.appendChild(labelText);
+    innerDiv.appendChild(inputText);
+    return innerDiv;
+}
+
+function convertSnakeToSpace(str) {
+    return str.replace(/_/g, ' ');
+}
+
+function convertFirstCharToUppercase(str) {
+    return str.charAt(0).toUpperCase() + str.slice(1);
 }
