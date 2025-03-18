@@ -1,4 +1,10 @@
 use crate::domain::app_config::AppConfig;
+use crate::domain::audio::Audio;
+use crate::domain::constants::{
+    EVENT_TO_UI_ENABLE_AUDIO_CHANGED, EVENT_TO_UI_NEXT_SMART_ACTION,
+    EVENT_TO_UI_PREVIOUS_SMART_ACTION, EVENT_TO_UI_RECORDING_START, EVENT_TO_UI_WAITING_ERROR,
+    EVENT_TO_UI_WAITING_START, EVENT_TO_UI_WAITING_STOP,
+};
 use crate::domain::mouse_cursor_icon::MouseCursorIcon;
 use crate::domain::smart_action::{SmartAction, SmartActionState, SmartActionStatus};
 use crate::logic::audio_player_manager::AudioPlayerManager;
@@ -21,14 +27,6 @@ pub struct SmartActionManager {
     is_running: Arc<Mutex<bool>>,
     is_waiting: Arc<Mutex<bool>>,
 }
-
-const EVENT_TO_UI_NEXT_SMART_ACTION: &str = "event_to_ui_next_smart_action";
-const EVENT_TO_UI_PREVIOUS_SMART_ACTION: &str = "event_to_ui_previous_smart_action";
-const EVENT_TO_UI_RECORDING_START: &str = "event_to_ui_smart_action_recording_start";
-const EVENT_TO_UI_WAITING_START: &str = "event_to_ui_smart_action_waiting_start";
-const EVENT_TO_UI_WAITING_STOP: &str = "event_to_ui_smart_action_waiting_stop";
-const EVENT_TO_UI_WAITING_ERROR: &str = "event_to_ui_smart_action_waiting_error";
-const EVENT_TO_UI_ENABLE_AUDIO_CHANGED: &str = "event_to_ui_enable_audio_changed";
 
 impl SmartActionManager {
     pub fn new(
@@ -87,10 +85,7 @@ impl SmartActionManager {
         let current_smart_action_value = smart_action_state.value.lock().unwrap();
         let current_smart_action_args = smart_action_state.args.lock().unwrap();
 
-        self.audio_player_manager.play_sound_for_smart_action(
-            &current_smart_action_value,
-            Some(SmartActionStatus::RECORDING),
-        ); // TODO: it depends can be recording or not...
+        self.audio_player_manager.play_audio_file(Audio::START);
 
         let mut command_smart_action =
             self.build_cmd_smart_action(&current_smart_action_value, current_smart_action_args);
@@ -105,8 +100,6 @@ impl SmartActionManager {
             let command_smart_action = Arc::new(Mutex::new(process_command_smart_action));
             let tray_icon_manager = Arc::new(Mutex::new(self.tray_icon_manager.clone()));
             let audio_player_manager = Arc::new(Mutex::new(self.audio_player_manager.clone()));
-            let current_smart_action_value =
-                Arc::new(Mutex::new(current_smart_action_value.clone()));
 
             let is_running = self.is_running.clone();
             let is_waiting = self.is_waiting.clone();
@@ -131,23 +124,16 @@ impl SmartActionManager {
                     }
                 };
 
-                let smart_action_status = Self::emit_terminal_event(app_handle, &exit_status);
+                let _ = Self::emit_terminal_event(app_handle, &exit_status);
 
                 tray_icon_manager.lock().unwrap().show_default_icon();
 
                 Self::set_mouse_cursor(&MouseCursorIcon::DEFAULT);
 
-                // TODO: possible deadlock if the next unwrap fails and this lock is not released...
-                let current_smart_action_value = current_smart_action_value.lock().unwrap();
-
-                // TODO: completed successfully should not be called by speech to text
                 audio_player_manager
                     .lock()
                     .unwrap()
-                    .play_sound_for_smart_action(
-                        &current_smart_action_value,
-                        Some(smart_action_status),
-                    );
+                    .play_audio_file(Audio::STOP);
             }
         };
 
@@ -190,14 +176,6 @@ impl SmartActionManager {
             self.menu_manager.set_action_stopped();
 
             self.tray_icon_manager.show_waiting_icon();
-
-            let current_smart_action_state = self.smart_action_state.lock().unwrap();
-            let current_smart_action_value = current_smart_action_state.value.lock().unwrap();
-
-            self.audio_player_manager.play_sound_for_smart_action(
-                &current_smart_action_value,
-                Some(SmartActionStatus::WAITING),
-            );
 
             if let Err(e) = self
                 .app_handle

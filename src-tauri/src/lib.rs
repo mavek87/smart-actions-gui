@@ -55,7 +55,7 @@ pub fn run() {
 
             println!("System language detected: {}", &lang_code);
 
-            let mut language_manager =
+            let language_manager =
                 LanguageManager::new(Language::from_str(&lang_code).unwrap_or(Language::UNSET));
 
             let action_name_menu_item = MenuItemBuilder::new("Dictate Text")

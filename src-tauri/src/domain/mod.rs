@@ -6,3 +6,4 @@ pub mod constants;
 pub mod smart_action;
 pub mod mouse_cursor_icon;
 pub mod language;
+pub mod audio;

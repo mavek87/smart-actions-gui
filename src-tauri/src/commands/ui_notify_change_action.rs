@@ -22,7 +22,9 @@ pub fn ui_notify_change_action(
         .audio_player_manager
         .lock()
         .unwrap()
-        .play_sound_for_smart_action(smart_action_value_ref, None);
+        .play_sound_for_smart_action(smart_action_value_ref)
+        .inspect_err(|e| eprintln!("{}", e))
+        .ok();
 
     "OK".to_string()
 }
