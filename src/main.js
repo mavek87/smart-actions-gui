@@ -39,6 +39,9 @@ const div_actionProps = document.getElementById("div_action-props");
 const button_submitFormAction = document.getElementById("button_submit-form-action");
 const button_submitFormActionStopRecording = document.getElementById("button_submit-form-action-stop-recording");
 const button_submitFormActionWait = document.getElementById("button_submit-form-action_wait");
+const button_saveFormAction = document.getElementById("button_save-form-action");
+const dialog_saveSmartAction = document.getElementById("dialog_save-smart-action")
+const dialog_saveSmartActionContent = document.getElementById("dialog_save-smart-action-content");
 
 select_action.addEventListener('change', function () {
     populateViewForAction();
@@ -55,6 +58,13 @@ button_submitFormActionStopRecording.addEventListener('click', async function (e
     e.preventDefault();
 
     let _result = await ui_request_stop_action();
+});
+
+button_saveFormAction.addEventListener('click', function (e) {
+    const smartActionJson = extractSmartActionJsonFromForm();
+    const jsonObject = JSON.parse(smartActionJson);
+    dialog_saveSmartActionContent.innerHTML = JSON.stringify(jsonObject, null, 2);
+    dialog_saveSmartAction.open = true;
 });
 
 window.addEventListener("DOMContentLoaded", async () => {

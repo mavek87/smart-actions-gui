@@ -84,16 +84,56 @@
     <!--    </style>-->
 </head>
 
-<body>
+<body class="container-fluid">
+
+<dialog id="dialog_save-smart-action">
+    <article>
+        <header>
+            <button aria-label="Close" rel="prev"
+                    onclick="(() => document.getElementById('dialog_save-smart-action').open = false)()"></button>
+            <h4>
+                <strong>💾️ &nbsp; Save Smart Action</strong>
+            </h4>
+        </header>
+        <p>Are you sure you want to save this action?</p>
+        <input type="text" placeholder="Insert an alias for this smart action..." />
+        <details>
+            <summary>Show action details</summary>
+            <pre id="dialog_save-smart-action-content">Hello world!!!</pre>
+        </details>
+        <footer>
+            <button class="secondary"
+                    onclick="(() => document.getElementById('dialog_save-smart-action').open = false)()">Cancel
+            </button>
+            <button>Save</button>
+        </footer>
+    </article>
+</dialog>
+
+<header>
+    <nav>
+        <ul>
+            <li><strong>Smart Actions GUI</strong></li>
+        </ul>
+        <ul>
+            <li><a href="index.html" class="contrast">Playground</a></li>
+            <li><a href="b.html" class="contrast">Other page</a></li>
+        </ul>
+    </nav>
+</header>
+
 <!--<main class="container" style="transform: scale(0.8); transform-origin: 0 0; width: 500px;">-->
 <!--<main class="container-fluid" style="transform: scale(0.95);">-->
 <!--<main class="container-fluid" style="transform: scale(0.85);">-->
-<main class="container-fluid" style="transform: scale(1);">
+<main style="transform: scale(1);">
+
+    <div style="padding-right: 30%; padding-left: 30%">
+        <button id="button_save-form-action" type="submit" class="contrast">💾️ &nbsp; Save Smart Action</button>
+    </div>
 
     <div class="row" id="playground">
         <textarea id="text-area_playground" rows="10" placeholder="Playground text area..."></textarea>
     </div>
-
 
     <form id="form_action">
         <!--        <fieldset role="group">-->
@@ -101,8 +141,8 @@
             <label for="select_action" style="padding-right: 30px">Choose Action</label>
             <select id="select_action" name="value">
             </select>
-            <div style="padding-right: 25%; padding-left: 25%">
-                <button id="button_submit-form-action" type="submit">Execute smart action</button>
+            <div style="padding-right: 30%; padding-left: 30%">
+                <button id="button_submit-form-action" type="submit">&#9654; &nbsp; Execute smart action</button>
                 <button id="button_submit-form-action-stop-recording" class="secondary" type="submit" hidden>
                     Stop recording
                 </button>
