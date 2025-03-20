@@ -1,5 +1,6 @@
 const {invoke} = window.__TAURI__.core;
 const {listen} = window.__TAURI__.event;
+const {store, load} = window.__TAURI__.store;
 
 import {buildMetadataIfIsSelect as buildDictateTextMetadataIfIsSelect} from './dictate_text.js';
 import {buildMetadataIfIsSelect as buildAiReplyTextMetadataIfIsSelect} from './ai_reply_text.js';
@@ -42,6 +43,7 @@ const button_submitFormActionWait = document.getElementById("button_submit-form-
 const button_saveFormAction = document.getElementById("button_save-form-action");
 const dialog_saveSmartAction = document.getElementById("dialog_save-smart-action")
 const dialog_saveSmartActionContent = document.getElementById("dialog_save-smart-action-content");
+const dialog_buttonConfirmSaveSmartAction = document.getElementById("dialog_button_confirm-save-smart-action");
 
 select_action.addEventListener('change', function () {
     populateViewForAction();
@@ -65,6 +67,13 @@ button_saveFormAction.addEventListener('click', function (e) {
     const jsonObject = JSON.parse(smartActionJson);
     dialog_saveSmartActionContent.innerHTML = JSON.stringify(jsonObject, null, 2);
     dialog_saveSmartAction.open = true;
+});
+
+dialog_buttonConfirmSaveSmartAction.addEventListener('click', async (e) => {
+    const store = await load('store.json', {autoSave: false});
+    await store.set('some-key', {value: 5});
+    await store.save();
+    dialog_saveSmartAction.open = false;
 });
 
 window.addEventListener("DOMContentLoaded", async () => {
@@ -124,6 +133,18 @@ window.addEventListener("DOMContentLoaded", async () => {
             }
         });
     }
+
+    // Create a new store or load the existing one,
+    // note that the options will be ignored if a `Store` with that path has already been created
+    const store = await load('store.json', {autoSave: false});
+
+    const k = await store.get('some-key');
+    console.log("k " + JSON.stringify(k));
+
+
+    // Get a value.
+    // const val = await store.get < {value: number} > ('some-key');
+    // console.log(val); // { value: 5 }
 
     listen_smart_action_server_events();
 
@@ -332,7 +353,6 @@ function buildDefaultElement(action_key, action_value) {
     inputText.id = 'form-action-props_input_' + action_key;
     inputText.name = action_key;
     const inputChangeListener = function (event) {
-        console.log(event.target.value);
         ui_notify_change_element_in_action(extractSmartActionJsonFromForm());
     }
     inputText.addEventListener('input', inputChangeListener);

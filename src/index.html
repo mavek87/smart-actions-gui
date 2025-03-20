@@ -96,16 +96,17 @@
             </h4>
         </header>
         <p>Are you sure you want to save this action?</p>
-        <input type="text" placeholder="Insert an alias for this smart action..." />
+        <label for="smart-action-alias">Alias</label>
+        <input id="smart-action-alias" type="text" placeholder="Insert an alias for this smart action..." />
         <details>
             <summary>Show action details</summary>
-            <pre id="dialog_save-smart-action-content">Hello world!!!</pre>
+            <pre id="dialog_save-smart-action-content">...</pre>
         </details>
         <footer>
             <button class="secondary"
                     onclick="(() => document.getElementById('dialog_save-smart-action').open = false)()">Cancel
             </button>
-            <button>Save</button>
+            <button id="dialog_button_confirm-save-smart-action">Save</button>
         </footer>
     </article>
 </dialog>
@@ -116,8 +117,8 @@
             <li><strong>Smart Actions GUI</strong></li>
         </ul>
         <ul>
-            <li><a href="index.html" class="contrast">Playground</a></li>
-            <li><a href="b.html" class="contrast">Other page</a></li>
+            <li><a href="cockpit.html" class="contrast">Cockpit</a></li>
+            <li><a href="#" class="contrast">Playground</a></li>
         </ul>
     </nav>
 </header>
@@ -126,6 +127,8 @@
 <!--<main class="container-fluid" style="transform: scale(0.95);">-->
 <!--<main class="container-fluid" style="transform: scale(0.85);">-->
 <main style="transform: scale(1);">
+
+    <h1>Playground</h1>
 
     <div style="padding-right: 30%; padding-left: 30%">
         <button id="button_save-form-action" type="submit" class="contrast">💾️ &nbsp; Save Smart Action</button>

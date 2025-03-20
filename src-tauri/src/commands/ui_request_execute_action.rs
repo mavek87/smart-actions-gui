@@ -16,7 +16,11 @@ pub fn ui_request_execute_action(
     //     smart_action
     // );
 
-    state.tray_icon_manager.lock().unwrap().show_recording_icon();
+    state
+        .tray_icon_manager
+        .lock()
+        .unwrap()
+        .show_recording_icon();
 
     let smart_action_manager = &state.smart_action_manager;
     smart_action_manager.change_current_smart_action(smart_action);

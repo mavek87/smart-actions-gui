@@ -48,6 +48,7 @@ pub fn run() {
     println!("app_config: {:?}", app_config);
 
     tauri::Builder::default()
+        .plugin(tauri_plugin_store::Builder::new().build())
         .setup(|app| {
             let lang_code = get_locale()
                 .map(|s| s.split('-').next().unwrap_or("unset").to_string())

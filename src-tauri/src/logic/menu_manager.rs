@@ -37,10 +37,10 @@ impl MenuManager {
 
     pub fn set_vocal_audio_menu_item_enabled(&self, is_enabled: bool) {
         self.stop_vocal_audio_menu_item
-           .lock()
-           .unwrap()
-           .set_enabled(is_enabled)
-           .unwrap();
+            .lock()
+            .unwrap()
+            .set_enabled(is_enabled)
+            .unwrap();
     }
 
     pub fn set_action_started(&self) {
