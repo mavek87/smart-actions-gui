@@ -24,8 +24,8 @@ use commands::{
 use domain::{
     app_state::AppState,
     constants::{
-        APP_NAME, APP_VERSION, AUTHORS, DEFAULT_CONFIG_FILE,
-        EVENT_TO_UI_CHANGE_CURRENT_LANGUAGE_ACTION, WEBSITE, WEBSITE_LABEL,
+        APP_NAME, APP_VERSION, AUTHORS, EVENT_TO_UI_CHANGE_CURRENT_LANGUAGE_ACTION, WEBSITE,
+        WEBSITE_LABEL,
     },
     language::Language,
     smart_action::SmartAction,
@@ -42,11 +42,8 @@ pub fn run() {
     let config_manager: ConfigManager = ConfigManager::new();
 
     let app_config = config_manager
-        .read_config(DEFAULT_CONFIG_FILE)
-        .expect(&format!(
-            "Error reading config file {}",
-            DEFAULT_CONFIG_FILE
-        ));
+        .read_config()
+        .expect("Unable to read the app configurations");
 
     println!("app_config: {:?}", app_config);
 
@@ -160,7 +157,6 @@ pub fn run() {
             );
 
             let tray_icon = TrayIconBuilder::new()
-                // .icon(app.default_window_icon().unwrap().clone())
                 .menu(&menu)
                 .on_menu_event(move |app, event| match event.id.as_ref() {
                     "start" => {
@@ -335,7 +331,6 @@ pub fn run() {
 
             Ok(())
         })
-        // .manage(app_state)
         .invoke_handler(tauri::generate_handler![
             ui_notify_change_action,
             ui_notify_change_element_in_action,

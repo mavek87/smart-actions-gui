@@ -5,7 +5,10 @@ const {store, load} = window.__TAURI__.store;
 import {buildMetadataIfIsSelect as buildDictateTextMetadataIfIsSelect} from './dictate_text.js';
 import {buildMetadataIfIsSelect as buildAiReplyTextMetadataIfIsSelect} from './ai_reply_text.js';
 import {buildMetadataIfIsSelect as buildAudioToTextMetadataIfIsSelect} from './audio_to_text.js';
-import {buildMetadataIfIsSelect as buildTextToSpeechMetadataIfIsSelect} from './text_to_speech.js';
+import {
+    buildMetadataIfIsSelect as buildTextToSpeechMetadataIfIsSelect,
+    buildTextToSpeechMetadataIfIsTextArea
+} from './text_to_speech.js';
 
 async function ui_notify_startup() {
     return await invoke("ui_notify_startup", {});
@@ -30,6 +33,7 @@ async function ui_request_stop_action() {
 let actions = [];
 let currentSmartAction;
 let inputListeners = [];
+let textAreaListeners = [];
 let is_audio_enabled = true;
 let current_language;
 
@@ -245,12 +249,21 @@ function populateViewForAction() {
 }
 
 function populateViewSettingsForAction(action) {
+    // TODO: remove duplication
     console.log(`cleaning ${inputListeners?.length || 0} input listeners`);
     inputListeners.forEach(listener => {
         console.log("clean input listener for id: " + listener.elementId);
         listener.elementInstance.removeEventListener('input', listener.listenerFn);
     });
     inputListeners = [];
+
+    console.log(`cleaning ${textAreaListeners?.length || 0} textarea listeners`);
+    textAreaListeners.forEach(listener => {
+        console.log("clean input listener for id: " + listener.elementId);
+        listener.elementInstance.removeEventListener('textarea', listener.listenerFn);
+    });
+    textAreaListeners = [];
+    //////////////////////////////////////////////////////////////////
     div_actionProps.innerHTML = '';
 
     const maxElementsPerRow = 3;
@@ -271,11 +284,13 @@ function populateViewSettingsForAction(action) {
         counterElementsInRow++;
     }
 
+    console.log(`attached ${textAreaListeners.length} textarea listeners`)
     console.log(`attached ${inputListeners.length} input listeners`)
 }
 
 function buildElementForActionType(action, action_key, action_value) {
     let selectMetadata;
+    let textAreaMetadata;
     switch (action.value) {
         case "dictate_text":
             selectMetadata = buildDictateTextMetadataIfIsSelect(action_key);
@@ -299,6 +314,11 @@ function buildElementForActionType(action, action_key, action_value) {
             selectMetadata = buildTextToSpeechMetadataIfIsSelect(action_key);
             if (selectMetadata) {
                 return buildSelectElement(action_key, action_value, selectMetadata);
+            }
+
+            textAreaMetadata = buildTextToSpeechMetadataIfIsTextArea(action_key);
+            if (textAreaMetadata) {
+                return buildTextAreaElement(action_key, action_value, selectMetadata);
             }
             break;
         default:
@@ -351,6 +371,32 @@ function buildSelectElement(action_key, action_value, optionsMetadata) {
 
     innerDiv.appendChild(labelText);
     innerDiv.appendChild(select);
+    return innerDiv;
+}
+
+function buildTextAreaElement(action_key, action_value) {
+    const textArea = document.createElement('textarea');
+    textArea.value = action_value || "";
+    textArea.id = 'form-action-props_textarea_' + action_key;
+    textArea.name = action_key;
+    const textAreaChangeListener = function (event) {
+        ui_notify_change_element_in_action(extractSmartActionJsonFromForm());
+    }
+    textArea.addEventListener('textarea', textAreaChangeListener);
+    textAreaListeners.push({
+        elementId: textArea.id,
+        elementInstance: textArea,
+        listenerFn: textAreaChangeListener
+    });
+
+    const labelText = document.createElement('label');
+    labelText.id = 'form-action-props_label_' + action_key
+    labelText.htmlFor = textArea.id
+    labelText.textContent = convertFirstCharToUppercase(convertSnakeToSpace(action_key));
+
+    const innerDiv = document.createElement("div");
+    innerDiv.appendChild(labelText);
+    innerDiv.appendChild(textArea);
     return innerDiv;
 }
 

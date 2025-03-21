@@ -1,5 +1,4 @@
 use crate::domain::app_state::AppState;
-use crate::domain::constants::DEFAULT_CONFIG_FILE;
 use crate::domain::startup_ui_metadata::StartupUIMetadata;
 use crate::logic::action_config_parser::ActionConfigParser;
 use std::io::Read;
@@ -25,11 +24,8 @@ pub fn ui_notify_startup(state: State<AppState>) -> String {
 
     let config_manager = state.config_manager.lock().unwrap();
     let config = config_manager
-        .read_config(DEFAULT_CONFIG_FILE)
-        .expect(&format!(
-            "Error reading config file {}",
-            DEFAULT_CONFIG_FILE
-        ));
+        .read_config()
+        .unwrap();
 
     for action_name in &action_names {
         let action_output = Command::new("bash")
