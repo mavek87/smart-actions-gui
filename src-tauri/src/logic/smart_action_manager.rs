@@ -287,6 +287,7 @@ impl SmartActionManager {
                         if smart_action_value == "text_to_speech" && arg_key == "text" {
                             arg_value = value
                                 .to_string()
+                                .replace("$", "")
                                 .replace("\n", ". ")
                                 .replace("\"", "")
                                 .replace("'", "");
