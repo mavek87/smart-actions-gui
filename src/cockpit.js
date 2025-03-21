@@ -6,28 +6,78 @@ const smartActionContainer = document.getElementById('smart-actions-container');
 
 // https://v2.tauri.app/reference/javascript/store/#load
 
+let divEventListeners = [];
+
 window.addEventListener("DOMContentLoaded", async () => {
-    const store = await load('store.json', {autoSave: false});
-    const storedValues = await store.length();
-    // await store.entries.forEach(entry => {
-    //     const {key, value} = entry;
-    //     console.log(`${key}: ${JSON.stringify(value)}`);
-    //     const div = document.createElement('div');
-    //     div.textContent = `${key}: ${JSON.stringify(value)}`;
-    //     smartActionContainer.appendChild(div);
-    // })
-    const storeData = await store.entries();
-    console.log(storeData);
-
-    storeData.forEach(([key, obj]) => {
-        console.log("key:", key);
-        console.log("value:", obj);
+    console.log(`cleaning ${divEventListeners?.length || 0} listeners`);
+    divEventListeners.forEach(eventListener => {
+        console.log("cleaning eventListener for id: " + eventListener.elementId);
+        eventListener.elementInstance.removeEventListener('div', eventListener.listenerFn);
     });
+    divEventListeners = [];
 
-    if (storedValues > 0) {
-        const k = await store.get('some-key');
-        console.log(k);
-        // await store.set('some-key', {value: 5});
-        // await store.save();
-    }
+    const store = await load('store.json', {autoSave: false});
+
+    const storeData = await store.entries();
+
+    const maxElementsPerRow = 3;
+    let counterElementsInRow = 0;
+    let divWithGrid;
+    storeData.forEach(([key, obj]) => {
+        if (counterElementsInRow % maxElementsPerRow === 0) {
+            divWithGrid = document.createElement("div");
+            divWithGrid.className = "grid";
+            smartActionContainer.appendChild(divWithGrid);
+        }
+
+        const article = document.createElement("article");
+        article.classList.add("hover-border");
+
+        const articleHeader = document.createElement("header");
+        articleHeader.id = `article-header-${key}`;
+        const alias = document.createElement("h4");
+        alias.innerHTML = obj?.alias || "";
+        articleHeader.appendChild(alias);
+
+        const description = document.createElement("div");
+        description.innerHTML = obj?.description || "";
+
+        const details = document.createElement("details");
+        const summary = document.createElement("summary");
+        summary.innerHTML = "Show details";
+        const pre = document.createElement("pre");
+        pre.innerHTML = JSON.stringify(obj.data, null, 2);
+        details.appendChild(summary);
+        details.appendChild(pre)
+
+        const articleFooter = document.createElement("footer");
+        articleFooter.id = `article_footer-${key}`;
+        const deleteButton = document.createElement("div");
+        deleteButton.textContent = "🗑️ ";
+        deleteButton.id = `article_footer-${key}_delete_button`;
+        const deleteButtonChangeListener = async () => {
+            const store = await load('store.json', {autoSave: false});
+            store.delete(key);
+            await store.save();
+            location.reload();
+        };
+        deleteButton.addEventListener("click", deleteButtonChangeListener);
+        divEventListeners.push({
+            elementId: deleteButton.id,
+            elementInstance: deleteButton,
+            listenerFn: deleteButtonChangeListener
+        });
+
+        articleFooter.appendChild(deleteButton);
+
+        article.appendChild(articleHeader);
+        article.appendChild(description);
+        article.appendChild(document.createElement("br"));
+        article.appendChild(details);
+        article.appendChild(articleFooter);
+
+        divWithGrid.appendChild(article);
+
+        counterElementsInRow++;
+    });
 });

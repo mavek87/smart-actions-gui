@@ -44,6 +44,8 @@ const button_saveFormAction = document.getElementById("button_save-form-action")
 const dialog_saveSmartAction = document.getElementById("dialog_save-smart-action")
 const dialog_saveSmartActionContent = document.getElementById("dialog_save-smart-action-content");
 const dialog_buttonConfirmSaveSmartAction = document.getElementById("dialog_button_confirm-save-smart-action");
+const dialogSmartActionAlias = document.getElementById("dialog_smart-action-alias");
+const dialogSmartActionDescription = document.getElementById("dialog_smart-action-description");
 
 select_action.addEventListener('change', function () {
     populateViewForAction();
@@ -63,17 +65,35 @@ button_submitFormActionStopRecording.addEventListener('click', async function (e
 });
 
 button_saveFormAction.addEventListener('click', function (e) {
-    const smartActionJson = extractSmartActionJsonFromForm();
-    const jsonObject = JSON.parse(smartActionJson);
-    dialog_saveSmartActionContent.innerHTML = JSON.stringify(jsonObject, null, 2);
+    dialogSmartActionAlias.value = "";
+    dialogSmartActionDescription.value = "";
+    const smartAction = extractSmartActionFromForm();
+    dialog_saveSmartActionContent.innerHTML = JSON.stringify(smartAction, null, 2);
     dialog_saveSmartAction.open = true;
 });
 
 dialog_buttonConfirmSaveSmartAction.addEventListener('click', async (e) => {
     const store = await load('store.json', {autoSave: false});
-    await store.set('some-key', {value: 5});
+
+    const smartActionData = extractSmartActionFromForm();
+
+    const uuid = crypto.randomUUID();
+
+    const smartAction = {
+        id: uuid,
+        description: dialogSmartActionDescription.value,
+        alias: dialogSmartActionAlias.value,
+        data: smartActionData,
+    }
+    console.log(JSON.stringify(smartAction));
+
+    await store.set(uuid, smartAction);
     await store.save();
+
     dialog_saveSmartAction.open = false;
+
+    dialogSmartActionAlias.value = "";
+    dialogSmartActionDescription.value = "";
 });
 
 window.addEventListener("DOMContentLoaded", async () => {
@@ -133,18 +153,6 @@ window.addEventListener("DOMContentLoaded", async () => {
             }
         });
     }
-
-    // Create a new store or load the existing one,
-    // note that the options will be ignored if a `Store` with that path has already been created
-    const store = await load('store.json', {autoSave: false});
-
-    const k = await store.get('some-key');
-    console.log("k " + JSON.stringify(k));
-
-
-    // Get a value.
-    // const val = await store.get < {value: number} > ('some-key');
-    // console.log(val); // { value: 5 }
 
     listen_smart_action_server_events();
 

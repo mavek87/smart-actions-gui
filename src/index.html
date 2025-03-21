@@ -96,12 +96,16 @@
             </h4>
         </header>
         <p>Are you sure you want to save this action?</p>
-        <label for="smart-action-alias">Alias</label>
-        <input id="smart-action-alias" type="text" placeholder="Insert an alias for this smart action..." />
-        <details>
-            <summary>Show action details</summary>
-            <pre id="dialog_save-smart-action-content">...</pre>
-        </details>
+        <form>
+            <label for="dialog_smart-action-alias">Alias</label>
+            <input id="dialog_smart-action-alias" type="text" placeholder="Insert an alias for this smart action..."/>
+            <label for="dialog_smart-action-description">Description</label>
+            <input id="dialog_smart-action-description" type="text" placeholder="Insert a description for this smart action..."/>
+            <details>
+                <summary>Show action details</summary>
+                <pre id="dialog_save-smart-action-content">...</pre>
+            </details>
+        </form>
         <footer>
             <button class="secondary"
                     onclick="(() => document.getElementById('dialog_save-smart-action').open = false)()">Cancel
@@ -118,7 +122,7 @@
         </ul>
         <ul>
             <li><a href="cockpit.html" class="contrast">Cockpit</a></li>
-            <li><a href="#" class="contrast">Playground</a></li>
+            <li><a href="#" class="contrast" style="text-decoration: underline;">Playground</a></li>
         </ul>
     </nav>
 </header>
