@@ -52,6 +52,8 @@ window.addEventListener("DOMContentLoaded", async () => {
 
         const articleFooter = document.createElement("footer");
         articleFooter.id = `article_footer-${key}`;
+        articleFooter.style.display = "flex";
+        articleFooter.style.justifyContent = "flex-end";
         const deleteButton = document.createElement("div");
         deleteButton.textContent = "🗑️ ";
         deleteButton.id = `article_footer-${key}_delete_button`;

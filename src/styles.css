@@ -7,6 +7,17 @@
     border: 2px solid #0077ff;
 }
 
+.app-header {
+    /*position: fixed;  !* Fissa l'header in alto *!*/
+    /*top: 0;           !* Posiziona l'header a 0px dal bordo superiore *!*/
+    /*left: 0;          !* Allinea a sinistra *!*/
+    /*width: 100%;      !* Occupa tutta la larghezza *!*/
+    /*color: white;     !* Testo bianco *!*/
+    /*padding: 15px;    !* Spazio interno *!*/
+    /*text-align: center; !* Allinea il testo al centro *!*/
+    /*z-index: 1000;    !* Assicura che stia sopra gli altri elementi *!*/
+}
+
 /*:root {*/
 /*    --pico-font-family-sans-serif: Inter, system-ui, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, Helvetica, Arial, "Helvetica Neue", sans-serif, var(--pico-font-family-emoji);*/
 /*    --pico-font-size: 87.5%;*/
