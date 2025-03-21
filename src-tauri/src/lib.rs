@@ -2,10 +2,10 @@ mod commands;
 mod domain;
 mod logic;
 
-use std::collections::HashMap;
-use std::string::ToString;
-use std::sync::Mutex;
 use sys_locale::get_locale;
+
+use std::{collections::HashMap, string::ToString, sync::Mutex};
+
 use tauri::{
     menu::{
         AboutMetadataBuilder, CheckMenuItemBuilder, MenuBuilder, MenuItemBuilder, SubmenuBuilder,
@@ -15,19 +15,22 @@ use tauri::{
 };
 
 use commands::{
-    ui_notify_change_action::ui_notify_change_action, ui_notify_startup::ui_notify_startup,
-    ui_request_execute_action::ui_request_execute_action,
+    ui_notify_change_action::ui_notify_change_action,
+    ui_notify_change_element_in_action::ui_notify_change_element_in_action,
+    ui_notify_startup::ui_notify_startup, ui_request_execute_action::ui_request_execute_action,
     ui_request_stop_action::ui_request_stop_action,
 };
 
-use domain::{app_state::AppState, smart_action::SmartAction};
-
-use crate::commands::ui_notify_change_element_in_action::ui_notify_change_element_in_action;
-use crate::domain::constants::{
-    APP_NAME, APP_VERSION, AUTHORS, DEFAULT_CONFIG_FILE,
-    EVENT_TO_UI_CHANGE_CURRENT_LANGUAGE_ACTION, WEBSITE, WEBSITE_LABEL,
+use domain::{
+    app_state::AppState,
+    constants::{
+        APP_NAME, APP_VERSION, AUTHORS, DEFAULT_CONFIG_FILE,
+        EVENT_TO_UI_CHANGE_CURRENT_LANGUAGE_ACTION, WEBSITE, WEBSITE_LABEL,
+    },
+    language::Language,
+    smart_action::SmartAction,
 };
-use crate::domain::language::Language;
+
 use logic::{
     audio_player_manager::AudioPlayerManager, config_manager::ConfigManager,
     language_manager::LanguageManager, menu_manager::MenuManager,
