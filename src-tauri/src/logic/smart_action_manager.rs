@@ -272,6 +272,8 @@ impl SmartActionManager {
             ))
             .arg(format!("{}", &current_smart_action_value));
 
+        let smart_action_value = current_smart_action_value.to_string();
+
         for arg in current_smart_action_args.iter() {
             let mut arg_param: String = String::new();
             let mut arg_value: String = String::new();
@@ -281,7 +283,16 @@ impl SmartActionManager {
                     if arg_key == "arg" {
                         arg_param = value.to_string(); // -l
                     } else {
-                        arg_value = value.to_string(); // it
+                        // TODO: piper doesn't wait for the pauses... I don't know why
+                        if smart_action_value == "text_to_speech" && arg_key == "text" {
+                            arg_value = value
+                                .to_string()
+                                .replace("\n", ". ")
+                                .replace("\"", "")
+                                .replace("'", "");
+                        } else {
+                            arg_value = value.to_string(); // it
+                        }
                     }
                 }
             }
