@@ -78,7 +78,10 @@ impl SmartActionManager {
             return;
         }
 
-        self.tray_icon_manager.show_default_icon();
+        self.tray_icon_manager
+            .show_default_icon()
+            .unwrap_or_else(|err| eprintln!("Error showing default icon: {}", err));
+
         self.menu_manager.set_action_started();
 
         let smart_action_state = self.smart_action_state.lock().unwrap();
@@ -126,14 +129,22 @@ impl SmartActionManager {
 
                 let _ = Self::emit_terminal_event(app_handle, &exit_status);
 
-                tray_icon_manager.lock().unwrap().show_default_icon();
+                {
+                    tray_icon_manager
+                        .lock()
+                        .unwrap()
+                        .show_default_icon()
+                        .unwrap_or_else(|err| eprintln!("Error showing default icon: {}", err));
+                }
 
                 Self::set_mouse_cursor(&MouseCursorIcon::DEFAULT);
 
-                audio_player_manager
-                    .lock()
-                    .unwrap()
-                    .play_audio_file(Audio::STOP);
+                {
+                    audio_player_manager
+                        .lock()
+                        .unwrap()
+                        .play_audio_file(Audio::STOP);
+                }
             }
         };
 
@@ -175,7 +186,9 @@ impl SmartActionManager {
         } else {
             self.menu_manager.set_action_stopped();
 
-            self.tray_icon_manager.show_waiting_icon();
+            self.tray_icon_manager
+                .show_waiting_icon()
+                .unwrap_or_else(|err| eprintln!("Error showing wait icon: {}", err));
 
             if let Err(e) = self
                 .app_handle
