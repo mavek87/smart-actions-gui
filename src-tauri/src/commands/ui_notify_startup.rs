@@ -68,14 +68,14 @@ mod tests {
     #[test]
     fn test_run_bash_command_echo() {
         // Usa bash -c per eseguire direttamente il comando echo
-        let output = run_command("/bin/bash", &["-c", "echo ciao mondo"]);
-        assert_eq!(output.unwrap().trim(), "ciao mondo");
+        let output = run_command("/bin/bash", &["-c", "echo hello world"]);
+        assert_eq!(output.unwrap().trim(), "hello world");
     }
 
     #[test]
     fn test_run_sh_command_echo() {
         // Usa bash -c per eseguire direttamente il comando echo
-        let output = run_command("/bin/sh", &["-c", "echo ciao mondo"]);
-        assert_eq!(output.unwrap().trim(), "ciao mondo");
+        let output = run_command("/bin/sh", &["-c", "echo hello world"]);
+        assert_eq!(output.unwrap().trim(), "hello world");
     }
 }
