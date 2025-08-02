@@ -158,6 +158,11 @@ window.addEventListener("DOMContentLoaded", async () => {
         });
     }
 
+    const appTitleElement = document.querySelector("#app_title");
+    let appTitle = appTitleElement.textContent
+    // TODO: use a dynamic version instead of hardcoded
+    appTitleElement.textContent = appTitle + " (v. 1.0.0)";
+
     listen_smart_action_server_events();
 
     const jsonStartupMetadata = await ui_notify_startup();
