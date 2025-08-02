@@ -278,14 +278,15 @@ impl SmartActionManager {
     ) -> Command {
         let mut command_smart_action = Command::new("bash");
 
+        let script_path = format!("{}/smart-actions.sh", self.app_config.smart_actions_folder);
+
         command_smart_action
-            .arg(format!(
-                "{}/smart-actions.sh",
-                self.app_config.smart_actions_folder
-            ))
+            .arg(&script_path)
             .arg(format!("{}", &current_smart_action_value));
 
         let smart_action_value = current_smart_action_value.to_string();
+
+        let mut debug_cmd = format!("bash {} {}", script_path, smart_action_value);
 
         for arg in current_smart_action_args.iter() {
             let mut arg_param: String = String::new();
@@ -312,10 +313,17 @@ impl SmartActionManager {
             }
 
             if !arg_value.is_empty() {
-                command_smart_action.arg(arg_param);
-                command_smart_action.arg(arg_value);
+                command_smart_action.arg(&arg_param);
+                command_smart_action.arg(&arg_value);
+
+                debug_cmd.push(' ');
+                debug_cmd.push_str(&arg_param);
+                debug_cmd.push(' ');
+                debug_cmd.push_str(&arg_value);
             }
         }
+
+        println!("Command: {}", debug_cmd);
 
         command_smart_action
     }

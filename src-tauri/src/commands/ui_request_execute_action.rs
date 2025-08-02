@@ -11,10 +11,10 @@ pub fn ui_request_execute_action(
     let smart_action: SmartAction =
         serde_json::from_str(&json_smart_action).expect("Failed to parse JSON");
 
-    // println!(
-    //     "ui_request_execute_action :- SmartAction ?:{:?}",
-    //     smart_action
-    // );
+    println!(
+        "ui_request_execute_action :- SmartAction:{:?}",
+        smart_action
+    );
 
     {
         state
