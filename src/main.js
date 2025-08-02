@@ -248,22 +248,19 @@ function populateViewForAction() {
     populateViewSettingsForAction(action);
 }
 
-function populateViewSettingsForAction(action) {
-    // TODO: remove duplication
-    console.log(`cleaning ${inputListeners?.length || 0} input listeners`);
-    inputListeners.forEach(listener => {
-        console.log("clean input listener for id: " + listener.elementId);
-        listener.elementInstance.removeEventListener('input', listener.listenerFn);
+function cleanListeners(listeners, eventType, label) {
+    console.log(`cleaning ${listeners?.length || 0} ${label} listeners`);
+    listeners.forEach(listener => {
+        console.log(`clean ${label} listener for id: ${listener.elementId}`);
+        listener.elementInstance.removeEventListener(eventType, listener.listenerFn);
     });
-    inputListeners = [];
+    return [];
+}
 
-    console.log(`cleaning ${textAreaListeners?.length || 0} textarea listeners`);
-    textAreaListeners.forEach(listener => {
-        console.log("clean input listener for id: " + listener.elementId);
-        listener.elementInstance.removeEventListener('textarea', listener.listenerFn);
-    });
-    textAreaListeners = [];
-    //////////////////////////////////////////////////////////////////
+function populateViewSettingsForAction(action) {
+    inputListeners = cleanListeners(inputListeners, 'input', 'input');
+    textAreaListeners = cleanListeners(textAreaListeners, 'textarea', 'textarea');
+
     div_actionProps.innerHTML = '';
 
     const maxElementsPerRow = 3;
