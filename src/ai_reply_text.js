@@ -13,6 +13,7 @@ export function buildMetadataIfIsSelect(action_key, select_action, is_audio_enab
             const aiProviderOptionsMetadata = {
                 "tooltip": "This is the AI provider that will be used to generate the response",
                 "values": [
+                    {"value": "openai", "name": "OpenAI"},
                     {"value": "pollinations", "name": "Pollinations"},
                     {"value": "duckduckgo", "name": "DuckDuckGo"},
                     {"value": "ollama", "name": "Ollama"},
@@ -59,6 +60,7 @@ export function buildMetadataIfIsSelect(action_key, select_action, is_audio_enab
                 "defaultValue": "medium",
                 "tooltip": "The model used by the speach to text software (higher = more accurate, lower = faster)",
                 "values": [
+                    {"value": "llama3:latest", "name": "llama3:latest"},
                     {"value": "small", "name": "Small"},
                     {"value": "medium", "name": "Medium"},
                     {"value": "large", "name": "Large"},

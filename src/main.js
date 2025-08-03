@@ -9,6 +9,7 @@ import {
     buildMetadataIfIsSelect as buildTextToSpeechMetadataIfIsSelect,
     buildTextToSpeechMetadataIfIsTextArea
 } from './text_to_speech.js';
+import {createEditableSelect} from "./components/editable_select_component.js";
 
 async function ui_notify_startup() {
     return await invoke("ui_notify_startup", {});
