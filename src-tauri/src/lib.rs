@@ -184,6 +184,10 @@ pub fn run() {
                         app.exit(0);
                     }
                     "unset" | "en" | "it" => {
+                        let app_state: State<AppState> = app.state();
+                        // this is needed to ensure that previous actions are stopped
+                        app_state.smart_action_manager.try_to_fix_issues();
+
                         let selected_language = event.id().0.as_str();
 
                         lang_sub_menu_item_unset
@@ -273,6 +277,7 @@ pub fn run() {
                 )?;
             }
 
+            // TODO: the default should not be hardcodeds
             let arg_default_audio_device: HashMap<String, String> = HashMap::from([
                 ("arg".to_string(), "-a".to_string()),
                 ("audio_device".to_string(), "hw:3,0".to_string()),

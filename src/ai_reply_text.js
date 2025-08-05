@@ -57,9 +57,10 @@ export function buildMetadataIfIsSelect(action_key, select_action, is_audio_enab
             return outputDestinationOptionsMetadata;
         case "model":
             const modelOptionsMetadata = {
-                "defaultValue": "medium",
+                "defaultValue": "None",
                 "tooltip": "The model used by the speach to text software (higher = more accurate, lower = faster)",
                 "values": [
+                    {"value": "", "name": "None"},
                     {"value": "llama3:latest", "name": "llama3:latest"},
                     {"value": "small", "name": "Small"},
                     {"value": "medium", "name": "Medium"},
@@ -67,6 +68,16 @@ export function buildMetadataIfIsSelect(action_key, select_action, is_audio_enab
                 ]
             }
             return modelOptionsMetadata;
+        case "url":
+            const urlOptionsMetadata = {
+                "defaultValue": "None",
+                "tooltip": "The model used by the speach to text software (higher = more accurate, lower = faster)",
+                "values": [
+                    {"value": "", "name": "None"},
+                    {"value": "http://localhost:11434/v1/chat/completions", "name": "http://localhost:11434/v1/chat/completions"},
+                ]
+            }
+            return urlOptionsMetadata;
         case "task":
             const taskOptionsMetadata = {
                 "defaultValue": "transcribe",
