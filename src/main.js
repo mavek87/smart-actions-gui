@@ -334,6 +334,8 @@ function buildElementForActionType(action, action_key, action_value) {
 function buildSelectElement(action_key, action_value, optionsMetadata) {
     const innerDiv = document.createElement("div");
 
+    // const editableSelect = createEditableSelect([]);
+    // const select = editableSelect.getSelect();
     const select = document.createElement("select");
     optionsMetadata.values.forEach(optionMetadata => {
         const uiOption = document.createElement("option");

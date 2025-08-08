@@ -98,6 +98,7 @@ export function createEditableSelect(options, placeholder = '', newChoiceLabel =
 
     return {
         element: container,
+        getSelect: () => sel,
         getValue: () => sel.value,
         setValue: val => {
             sel.value = val
