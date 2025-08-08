@@ -1,16 +1,15 @@
 export function buildMetadataIfIsSelect(action_key, select_action, is_audio_enabled) {
     switch (action_key) {
         case "audio_sampling_rate":
-            const audioSamplingRate = {
+            return buildSelectMetadata({
                 "tooltip": "This is the sampling rate of the recording",
                 "values": [
                     {"value": "44100", "name": "44100"},
                     {"value": "48000", "name": "48000"},
                 ]
-            }
-            return audioSamplingRate;
+            });
         case "ai_provider":
-            const aiProviderOptionsMetadata = {
+            return buildSelectMetadata({
                 "tooltip": "This is the AI provider that will be used to generate the response",
                 "values": [
                     {"value": "openai", "name": "OpenAI"},
@@ -19,10 +18,9 @@ export function buildMetadataIfIsSelect(action_key, select_action, is_audio_enab
                     {"value": "ollama", "name": "Ollama"},
                     {"value": "phind", "name": "Phind"},
                 ]
-            }
-            return aiProviderOptionsMetadata;
+            });
         case "language":
-            const languageOptionsMetadata = {
+            return buildSelectMetadata({
                 "defaultValue": "",
                 "tooltip": "Suggest a language to use by the speech to text software, otherwise it will find out what language is spoken by the user",
                 "values": [
@@ -32,10 +30,9 @@ export function buildMetadataIfIsSelect(action_key, select_action, is_audio_enab
                     {"value": "es", "name": "Spanish"},
                     {"value": "fr", "name": "French"},
                 ]
-            }
-            return languageOptionsMetadata;
+            });
         case "selection_target":
-            const selectionTargetOptionsMetadata = {
+            return buildSelectMetadata({
                 "defaultValue": "none",
                 "tooltip": "If 'none' isn't selected the AI can take into account the selected text or the text copied into the clipboard",
                 // NOTE: terminal doesn't make sense in a GUI, so it's omitted
@@ -44,19 +41,17 @@ export function buildMetadataIfIsSelect(action_key, select_action, is_audio_enab
                     {"value": "primary", "name": "Selected Text"},
                     {"value": "clipboard", "name": "Copied Text"},
                 ]
-            }
-            return selectionTargetOptionsMetadata;
+            });
         case "output_destination":
-            const outputDestinationOptionsMetadata = {
+            return buildSelectMetadata({
                 "defaultValue": "display",
                 // NOTE: terminal doesn't make sense in a GUI, so it's omitted
                 "values": [
                     {"value": "display", "name": "Display"},
                 ]
-            }
-            return outputDestinationOptionsMetadata;
+            });
         case "model":
-            const modelOptionsMetadata = {
+            return buildSelectMetadata({
                 "defaultValue": "None",
                 "tooltip": "The model used by the speach to text software (higher = more accurate, lower = faster)",
                 "values": [
@@ -66,28 +61,25 @@ export function buildMetadataIfIsSelect(action_key, select_action, is_audio_enab
                     {"value": "medium", "name": "Medium"},
                     {"value": "large", "name": "Large"},
                 ]
-            }
-            return modelOptionsMetadata;
+            });
         case "url":
-            const urlOptionsMetadata = {
+            return buildSelectMetadata({
                 "defaultValue": "None",
                 "tooltip": "The model used by the speach to text software (higher = more accurate, lower = faster)",
                 "values": [
                     {"value": "", "name": "None"},
                     {"value": "http://localhost:11434/v1/chat/completions", "name": "http://localhost:11434/v1/chat/completions"},
                 ]
-            }
-            return urlOptionsMetadata;
+            });
         case "task":
-            const taskOptionsMetadata = {
+            return buildSelectMetadata({
                 "defaultValue": "transcribe",
                 "tooltip": "The speech to text model can transcribe what it hears or translate it into english",
                 "values": [
                     {"value": "transcribe", "name": "Transcribe"},
                     {"value": "translate", "name": "Translate"},
                 ]
-            }
-            return taskOptionsMetadata;
+            });
         case "output_format":
             const outputFormatOptionsMetadata = {
                 "tooltip": "The output format can be text format (multiple lines) or string format (one line)",
@@ -120,4 +112,12 @@ export function buildMetadataIfIsSelect(action_key, select_action, is_audio_enab
         default:
             return null
     }
+}
+
+function buildSelectMetadata({tooltip, values, defaultValue}) {
+    const metadata = {tooltip, values};
+    if (defaultValue !== undefined) {
+        metadata.defaultValue = defaultValue;
+    }
+    return metadata;
 }
