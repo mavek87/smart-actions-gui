@@ -15,3 +15,15 @@
 - download various models (piper, nerd-dictation)
 - add images to clipboard
 - add smart actions slot (1-10) where you can save your smart actions
+
+## Development 
+
+```bash
+cargo tauri dev
+```
+
+## Build
+
+```bash
+cargo tauri build
+```
